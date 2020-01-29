@@ -12,6 +12,9 @@ print("GENOTYPE FILES", args.geno)
 
 geno = args.geno
 out = args.out
+geno_het = geno + "_het"
+geno_call_rate = geno_het + "_call_rate"
+
 
 #QC and data cleaning
 def het_pruning(geno_path, out_path):
@@ -25,11 +28,32 @@ def het_pruning(geno_path, out_path):
     bash5 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
     bash6 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
     
-    bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_after_heterozyg"
+    bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
     
-    cmd_1 = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
+    cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    for cmd in cmd_1:
+    for cmd in cmds:
         subprocess.run(cmd, shell=True)
         
+def call_rate_pruning(geno_path, out_path):
+    
+    bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
+    bash2 = "mv " + geno_path + "_after_call_rate.irem " + out_path + "CALL_RATE_OUTLIERS.txt"
+    
+    cmds = [bash1, bash2]
+    for cmd in cmds:
+        subprocess.run(cmd, shell=True)
+
+def sex_chex(geno_path, out_path):
+    plink --bfile $FILENAME --check-sex 0.25 0.75 --maf 0.05 --out gender_check1
+    plink --bfile $FILENAME --chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out gender_check2 
+    grep "PROBLEM" gender_check1.sexcheck > problems1.txt
+    grep "PROBLEM" gender_check2.sexcheck > problems2.txt
+    cat problems1.txt problems2.txt > GENDER_FAILURES.txt
+    cut -f 1,2 GENDER_FAILURES.txt > samples_to_remove.txt
+    plink --bfile $FILENAME --remove samples_to_remove.txt --make-bed --out $FILENAME_after_gender
+        
+        
+        
 het_pruning(geno, out)
+call_rate_pruning(geno_het, out)
