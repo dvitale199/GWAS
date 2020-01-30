@@ -45,15 +45,16 @@ def call_rate_pruning(geno_path, out_path):
         subprocess.run(cmd, shell=True)
 
 def sex_chex(geno_path, out_path):
-    plink --bfile $FILENAME --check-sex 0.25 0.75 --maf 0.05 --out gender_check1
-    plink --bfile $FILENAME --chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out gender_check2 
-    grep "PROBLEM" gender_check1.sexcheck > problems1.txt
-    grep "PROBLEM" gender_check2.sexcheck > problems2.txt
-    cat problems1.txt problems2.txt > GENDER_FAILURES.txt
-    cut -f 1,2 GENDER_FAILURES.txt > samples_to_remove.txt
-    plink --bfile $FILENAME --remove samples_to_remove.txt --make-bed --out $FILENAME_after_gender
+    "plink --bfile " + geno_path + " --check-sex 0.25 0.75 --maf 0.05 --out " + out_path + "gender_check1"
+    "plink --bfile "+ geno_path + "--chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out " + out_path + "gender_check2"
+    "grep 'PROBLEM' " + out_path + "gender_check1.sexcheck > " + out_path + "problems1.txt"
+    "grep 'PROBLEM' " + out_path + "gender_check2.sexcheck > " + out_path + "problems2.txt"
+    "cat " + out_path + "problems1.txt " + out_path + "problems2.txt > " + out_path + "GENDER_FAILURES.txt"
+    "cut -f 1,2 " + out_path + "GENDER_FAILURES.txt > " + out_path + "samples_to_remove.txt"
+    "plink --bfile " + geno_path + " --remove " + out_path + "samples_to_remove.txt --make-bed --out " + geno_path + "_gender"
         
         
         
 het_pruning(geno, out)
 call_rate_pruning(geno_het, out)
+# sex_check(geno_call_rate, out)
