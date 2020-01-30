@@ -44,7 +44,7 @@ def call_rate_pruning(geno_path, out_path):
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
 
-def sex_chex(geno_path, out_path):
+def sex_check(geno_path, out_path):
     "plink --bfile " + geno_path + " --check-sex 0.25 0.75 --maf 0.05 --out " + out_path + "gender_check1"
     "plink --bfile "+ geno_path + "--chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out " + out_path + "gender_check2"
     "grep 'PROBLEM' " + out_path + "gender_check1.sexcheck > " + out_path + "problems1.txt"
@@ -57,4 +57,4 @@ def sex_chex(geno_path, out_path):
         
 het_pruning(geno, out)
 call_rate_pruning(geno_het, out)
-# sex_check(geno_call_rate, out)
+sex_check(geno_call_rate, out)
