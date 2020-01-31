@@ -51,6 +51,10 @@ def sex_check(geno_path, out_path):
     
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
+
+ ################################################################################################################################################################################################################################################################################################################################################
+# MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
+        
         
 def relatedness_pruning(geno_path, out_path):
     bash1 = "gcta --bfile " + geno_path + " --make-grm --out " + out_path + "GRM_matrix --autosome --maf 0.05" 
@@ -60,7 +64,24 @@ def relatedness_pruning(geno_path, out_path):
     cmds = [bash1, bash2, bash3]
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
+
         
+        
+################################################################################################################################################################################################################################################################################################################################################
+
+##variant checks
+def variant_missingness(geno_path, out_path):
+    # variant missingness
+    "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
+    #missingness by case control (--test-missing), using P > 1E-4
+    "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
+    "awk '{if ($5 <= 0.0001) print $2 }'" + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
+    "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
+
+
+
+        
+
 geno = args.geno
 out = args.out
 geno_het = geno + "_het"
