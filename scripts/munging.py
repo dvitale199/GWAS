@@ -105,3 +105,4 @@ call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
 relatedness_pruning(geno_sex, out)
 
+# THIS IS A TEST FOR GIT
