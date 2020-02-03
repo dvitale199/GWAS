@@ -73,10 +73,22 @@ def relatedness_pruning(geno_path, out_path):
 def variant_missingness(geno_path, out_path):
     # variant missingness
     "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
+    
     #missingness by case control (--test-missing), using P > 1E-4
     "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
     "awk '{if ($5 <= 0.0001) print $2 }'" + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
     "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
+    
+    #missingness by haplotype (--test-mishap), using P > 1E-4
+    "plink --bfile " + geno_path + "_missing1 --test-mishap --out " + geno_path + "missing_hap" 
+    "awk '{if ($8 <= 0.0001) print $9 }' " + out_path + "missing_hap.missing.hap > " + out_path + "missing_haps_1E4.txt"
+    "sed 's/|/\/g' " + out_path + "missing_haps_1E4.txt > " + out_path + "missing_haps_1E4_final.txt"
+    "plink --bfile " + geno_path + " --exclude " + out_path + "missing_haps_1E4_final.txt --make-bed --out " +  geno_path + "_missing2"
+    
+    #HWE from controls only using P > 1E-4
+    "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist"
+    "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_HWE"
+    
 
 
 
