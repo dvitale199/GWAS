@@ -52,7 +52,7 @@ def sex_check(geno_path, out_path):
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
 
- ################################################################################################################################################################################################################################################################################################################################################
+ ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 # MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
         
         
@@ -67,10 +67,10 @@ def relatedness_pruning(geno_path, out_path):
 
         
         
-################################################################################################################################################################################################################################################################################################################################################
+###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 
 ##variant checks
-def variant_missingness(geno_path, out_path):
+def variant_pruning(geno_path, out_path):
     # variant missingness
     "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
     
@@ -87,7 +87,7 @@ def variant_missingness(geno_path, out_path):
     
     #HWE from controls only using P > 1E-4
     "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist"
-    "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_HWE"
+    "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
     
 
 
@@ -99,10 +99,29 @@ out = args.out
 geno_het = geno + "_het"
 geno_call_rate = geno_het + "_call_rate"
 geno_sex = geno_call_rate + "_sex"
-        
+geno_relatedness = geno_sex + "_relatedness"
+geno_variant = geno_relatedness + "_variant"
+
 het_pruning(geno, out)
 call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
 relatedness_pruning(geno_sex, out)
+variant_pruning(geno_relatedness, out)
 
-# THIS IS A TEST FOR GIT
+
+
+
+
+###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
+
+#more code to be added
+"""
+
+# post-imputation
+plink2 --double-id --vcf chr1.dose.vcf.gz --maf 0.01 --geno 0.01 --hwe 5e-6 --autosome --exclude exclusion_regions_hg38.txt --make-pgen --out chr1_dose_imputed
+
+######## RUN plink_cleanup.py SCRIPT HERE ########
+
+plink2 --pfile chr1_dose_imputed_fixedIDs_sex --indep-pairwise 1000 10 0.02 --autosome --pheno dutch_phenos.txt --out pruned_data
+
+"""
