@@ -25,15 +25,10 @@ summary_df_cleaned = summary_df.sort_values('P').drop_duplicates(['markerID','co
 
 # select markers that exist across all datasets
 merged = reduce(lambda x, y: pd.merge(x, y, on=['markerID'], how='inner'), summary_data_list) 
-marker_list = merged.drop(merged.columns.difference(['markerID']), axis=1).drop_duplicates('markerID')
+marker_list = list(merged.drop(merged.columns.difference(['markerID']), axis=1).drop_duplicates('markerID').markerID)
 
-final_df = summary_df_cleaned[summary_df_cleaned.markerID.isin(list(marker_list.markerID))]
+final_df = summary_df_cleaned[summary_df_cleaned.markerID.isin(marker_list)]
+final_sorted = final_df.sort_values(['markerID','cohort'])
+final = final_sorted[['markerID', 'cohort', 'beta', 'se']]
 
-
-
-
-
-#checking UK meta duplicates
-test = pd.read_csv('/data/vitaled2/summary_stats/toMeta.COURAGE_UK.tab',sep='\t')
-dups_bool = test.markerID.duplicated()
-duplicated = test[dups_bool]
+final.to_csv("random_effect_test_5_cohorts.csv", index=False, sep='\t')
