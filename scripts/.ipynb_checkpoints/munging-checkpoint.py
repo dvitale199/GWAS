@@ -122,6 +122,9 @@ plink2 --double-id --vcf chr1.dose.vcf.gz --maf 0.01 --geno 0.01 --hwe 5e-6 --au
 
 ######## RUN plink_cleanup.py SCRIPT HERE ########
 
+#extract phenos from .fam file
+cat /data/CARD/PD/genotype_data/DUTCH/Dutch_gwas.fam | awk '{ print $1,$2,$6 }'
+
 plink2 --pfile chr1_dose_imputed_fixedIDs_sex --indep-pairwise 1000 10 0.02 --autosome --pheno dutch_phenos.txt --out pruned_data
 
 """
