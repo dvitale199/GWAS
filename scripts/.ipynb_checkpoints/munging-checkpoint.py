@@ -27,6 +27,7 @@ def het_pruning(geno_path, out_path):
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
     for cmd in cmds:
+        print(cmd)
         subprocess.run(cmd, shell=True)
         
 def call_rate_pruning(geno_path, out_path):
@@ -89,6 +90,8 @@ def variant_pruning(geno_path, out_path):
     "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist"
     "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
     
+    # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
+    "plink --bfile " + geno_path + " --maf 0.01 --make-bed --out " + geno_path + "_MAF"
 
 
 
@@ -103,10 +106,10 @@ geno_relatedness = geno_sex + "_relatedness"
 geno_variant = geno_relatedness + "_variant"
 
 het_pruning(geno, out)
-call_rate_pruning(geno_het, out)
-sex_check(geno_call_rate, out)
-relatedness_pruning(geno_sex, out)
-variant_pruning(geno_relatedness, out)
+# call_rate_pruning(geno_het, out)
+# sex_check(geno_call_rate, out)
+# relatedness_pruning(geno_sex, out)
+# variant_pruning(geno_relatedness, out)
 
 
 

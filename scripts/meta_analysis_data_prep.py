@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='Arguments for GWAS Meta-analysis')
 parser.add_argument('--tab', type=str, default='nope', help='GWAS: (string file path). Path to rvtest format .tab files, /dir/containing/files/ [default: nope].')
 parser.add_argument('--out_plink', type=str, default='nope', help='Prefix for plink .assoc output (including path)')
 parser.add_argument('--out_metasoft', type=str, default='nope', help='Prefix for metasoft .txt output (including path)')
-                                                   
+parser.add_argument('--out_gwama', type=str, default='nope', help='Prefix for gwama .txt output (including path)')                                                  
 args = parser.parse_args()
 
 # basedir = '/data/vitaled2/summary_stats/rvtest_files/'
@@ -41,6 +41,7 @@ def plink_meta_parse(tab_path, out_path):
         print("PLINK .assoc file written to:")
         print(out_path + suffixes[i] + '_random_effect_data.assoc')
     print("DONE!")
+    print()
 
 
 def metasoft_meta_parse(tab_path, out_path):
@@ -62,10 +63,43 @@ def metasoft_meta_parse(tab_path, out_path):
     merged.to_csv(out_path + 'random_effect_model_' + str(len(file_list)) + '_cohorts.txt', index=False, header=False, sep='\t')
     print("Metasoft .txt file written to:")
     print(out_path + 'random_effect_model_' + str(len(file_list)) + '_cohorts.txt')
-        
+    print("DONE!")
+    print()
+
+def gwama_meta_parse(tab_path, out_path):
+    """
+    generates .txt files for gwama meta-analysis method from rvtest .tab files
+    """
+    print("Parsing...")
+    print()
+    file_list = glob.glob(tab_path + '*.tab')
+    suffixes = [re.search(r'\.(.*?)\.', cohort).group(1) for cohort in file_list]
+    summary_data_list = [pd.read_csv(file, sep='\t') for file in file_list]
+    for i in range(len(summary_data_list)):
+        df = summary_data_list[i]
+        df2 = df.copy()
+        split = df.markerID.str.split(':', expand=True)
+        split.columns = ['CHR','POS']
+        df2.loc[:,'CHR'] = split.CHR
+        df2.loc[:,'POS'] = split.POS
+        df2.loc[:,'EA'] = df.minorAllele
+        df2.loc[:,'NEA'] = df.majorAllele
+        df3 = df2.sort_values('P').drop_duplicates(['markerID'], keep='first').copy()
+        df3.drop(["minorAllele", "majorAllele","P"], inplace=True, axis=1)
+        df3.columns = ['MARKERNAME', 'BETA', 'SE', 'EAF','CHR', 'POS', 'EA', 'NEA']
+        df3.CHR = df3.CHR.map(lambda x: x.lstrip('chr'))
+        df_final = df3[['MARKERNAME','CHR','POS','EA','NEA','BETA','SE','EAF']].copy()
+        df_final.to_csv(out_path + suffixes[i] + '_GWAMA_random_effect_data.txt', sep='\t', index=False)
+        print("GWAMA .txt file written to:")
+        print(out_path + suffixes[i] + '_GWAMA_random_effect_data.txt')
+    print("DONE!")
+    print()
+
 in_tab = args.tab
 out_plink = args.out_plink
 out_metasoft = args.out_metasoft
+out_gwama = args.out_gwama
+
 
 if (in_tab == "nope"):
     print("looks like you don't have any GWAS files to parse! get some GWAS data from rvtests and try again!")
@@ -87,9 +121,20 @@ if (in_tab != "nope") & (out_metasoft != "nope"):
     print("TO METASOFT .txt FORMAT")
     print()
     
-    metasoft_meta_parse(in_tab, out_metasoft)  
+    metasoft_meta_parse(in_tab, out_metasoft)
+    
+if (in_tab != "nope") & (out_gwama != "nope"):
+    print("NOW PARSING: ")
+    for file in glob.glob(in_tab + '*.tab'):
+        print(file)
+    print("TO GWAMA .txt FORMAT")
+    print()
+    
+    gwama_meta_parse(in_tab, out_gwama)  
                                 
 
+        
+        
         
 ###### UNUSED SHIT ######
     
