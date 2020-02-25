@@ -1,3 +1,11 @@
+#### THINGS TO ADD #####
+# -CLEANUP DURING EACH STEP
+# -FIX LOGGING TO SINGLE FILE
+# -FIX AWFUL CONDITIONAL METHOD
+# -FIGURE OUT WHERE PHENOS ARE FOR ADNI DATA AND MERGE
+
+
+
 import subprocess
 import argparse
 import pandas as pd
@@ -53,7 +61,7 @@ def het_pruning(geno_path, out_path):
         
         
 def call_rate_pruning(geno_path, out_path):
-    print("NOW PRUNING FOR CALL RATE")
+    print("PRUNING FOR CALL RATE")
     
     bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
     bash2 = "mv " + geno_path + "_after_call_rate.irem " + out_path + "CALL_RATE_OUTLIERS.txt"
@@ -78,7 +86,7 @@ def call_rate_pruning(geno_path, out_path):
         
 
 def sex_check(geno_path, out_path):
-    print("NOW CHECKING SEXES")
+    print("CHECKING SEXES")
     bash1 = "plink --bfile " + geno_path + " --check-sex 0.25 0.75 --maf 0.05 --out " + out_path + "gender_check1"
     bash2 = "plink --bfile "+ geno_path + " --chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out " + out_path + "gender_check2"
     bash3 = "grep 'PROBLEM' " + out_path + "gender_check1.sexcheck > " + out_path + "problems1.txt"
@@ -116,6 +124,7 @@ def sex_check(geno_path, out_path):
         
         
 def relatedness_pruning(geno_path, out_path):
+    print("RELATEDNESS PRUNING")
     bash1 = "gcta --bfile " + geno_path + " --make-grm --out " + out_path + "GRM_matrix --autosome --maf 0.05" 
     bash2 = "gcta --grm-cutoff 0.125 --grm " + out_path + "GRM_matrix --out " + out_path + "GRM_matrix_0125 --make-grm"
     bash3 = "plink --bfile " + geno_path + " --keep " + out_path + "GRM_matrix_0125.grm.id --make-bed --out " + geno_path + "_relatedness"
@@ -130,6 +139,7 @@ def relatedness_pruning(geno_path, out_path):
 
 ##variant checks
 def variant_pruning(geno_path, out_path):
+    print("VARIANT-LEVEL PRUNING")
     # variant missingness
     "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
     
@@ -165,6 +175,12 @@ geno_variant = geno_relatedness + "_variant"
 
 
 
+
+# NEED TO FIX THIS MONSTROSITY BELOW... SOMETHING LIKE:
+# [LIST OF STEPS]
+# for each step after het_pruning:
+    #new elif statement
+
 # het pruning
 het_pruning(geno, out)
 
@@ -182,10 +198,25 @@ elif os.path.exists(geno_het + ".bim"):
 else:
     sex_check(geno, out)
 
+if os.path.exists(geno_sex + ".bim"):
+    relatedness_pruning(geno_sex, out)  
+elif os.path.exists(geno_call_rate + ".bim"):
+    relatedness_pruning(geno_call_rate)
+elif os.path.exists(geno_het + ".bim"):
+    relatedness_pruning(geno_het, out)
+else:
+    relatedness_pruning(geno, out)
 
-# relatedness_pruning(geno_sex, out)
-# variant_pruning(geno_relatedness, out)
-
+if os.path.exists(geno_relatedness + ".bim"):
+    variant_pruning(geno_relatedness, out)
+elif os.path.exists(geno_sex + ".bim"):
+    variant_pruning(geno_sex, out)  
+elif os.path.exists(geno_call_rate + ".bim"):
+    variant_pruning(geno_call_rate)
+elif os.path.exists(geno_het + ".bim"):
+    variant_pruning(geno_het, out)
+else:
+    variant_pruning(geno, out)
 
 
 
