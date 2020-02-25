@@ -3,6 +3,9 @@
 # -FIX LOGGING TO SINGLE FILE
 # -FIX AWFUL CONDITIONAL METHOD
 # -FIGURE OUT WHERE PHENOS ARE FOR ADNI DATA AND MERGE
+# -FIGURE OUT WHAT IS FAILING ON VARIANT-LEVEL
+# -AUTOMATE IMPUTATION VIA API
+# -GET PLINK AND HAIL GWAS RUNNING
 
 
 
@@ -145,7 +148,7 @@ def variant_pruning(geno_path, out_path):
     
     #missingness by case control (--test-missing), using P > 1E-4
     "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
-    "awk '{if ($5 <= 0.0001) print $2 }'" + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
+    "awk '{if ($5 <= 0.0001) print $2 }' " + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
     "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
     
     #missingness by haplotype (--test-mishap), using P > 1E-4
