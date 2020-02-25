@@ -10,9 +10,15 @@ args = parser.parse_args()
 
 print("GENOTYPE FILES", args.geno)
 
+def logging(geno_path, out_path):
+    out_name = geno_path + "_GWAS_QC.log"
+    log = open(out_name, "w", newline='\n')
+    
+    return log
+    
 #QC and data cleaning
 def het_pruning(geno_path, out_path):
-
+    log = logging(geno_path, out_path)
     bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
     bash2 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
     bash3 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
@@ -26,10 +32,24 @@ def het_pruning(geno_path, out_path):
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
+    log.write("RUNNING QC FOR " + geno_path)
+    log.write("\n")
+    log.write("PRUNING FOR HETEROZYGOSITY WITH THE FOLLOWING COMMANDS:")
+    log.write("\n")
+    log.write("\n")
+    
     for cmd in cmds:
-        print(cmd)
+        log.write(cmd)
+        log.write("\n")
         subprocess.run(cmd, shell=True)
         
+    log.write("***********************************************")
+    log.write("***********************************************")
+    log.write("***********************************************")
+    log.close()
+        
+        
+
 def call_rate_pruning(geno_path, out_path):
     
     bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
@@ -105,6 +125,8 @@ geno_sex = geno_call_rate + "_sex"
 geno_relatedness = geno_sex + "_relatedness"
 geno_variant = geno_relatedness + "_variant"
 
+
+############### need to write if/else statement for if new file names arent generated!!!!!!!!!!!!!!!!!! ###############
 het_pruning(geno, out)
 # call_rate_pruning(geno_het, out)
 # sex_check(geno_call_rate, out)
