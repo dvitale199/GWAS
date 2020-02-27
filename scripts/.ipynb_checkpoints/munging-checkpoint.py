@@ -144,27 +144,29 @@ def relatedness_pruning(geno_path, out_path):
 def variant_pruning(geno_path, out_path):
     print("VARIANT-LEVEL PRUNING")
     # variant missingness
-    "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
+    bash1 = "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
     
     #missingness by case control (--test-missing), using P > 1E-4
-    "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
-    "awk '{if ($5 <= 0.0001) print $2 }' " + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
-    "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
+    bash2 = "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
+    bash3 = "awk '{if ($5 <= 0.0001) print $2 }' " + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
+    bash4 = "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
     
     #missingness by haplotype (--test-mishap), using P > 1E-4
-    "plink --bfile " + geno_path + "_missing1 --test-mishap --out " + geno_path + "missing_hap" 
-    "awk '{if ($8 <= 0.0001) print $9 }' " + out_path + "missing_hap.missing.hap > " + out_path + "missing_haps_1E4.txt"
-    "sed 's/|/\/g' " + out_path + "missing_haps_1E4.txt > " + out_path + "missing_haps_1E4_final.txt"
-    "plink --bfile " + geno_path + " --exclude " + out_path + "missing_haps_1E4_final.txt --make-bed --out " +  geno_path + "_missing2"
+    bash5 = "plink --bfile " + geno_path + "_missing1 --test-mishap --out " + geno_path + "_missing_hap" 
+    bash6 = "awk '{if ($8 <= 0.0001) print $9 }' " + out_path + "missing_hap.missing.hap > " + out_path + "missing_haps_1E4.txt"
+    bash7 = "sed 's/|/\/g' " + out_path + "missing_haps_1E4.txt > " + out_path + "missing_haps_1E4_final.txt"
+    bash8 = "plink --bfile " + geno_path + " --exclude " + out_path + "missing_haps_1E4_final.txt --make-bed --out " +  geno_path + "_missing2"
     
     #HWE from controls only using P > 1E-4
-    "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist"
-    "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
+    bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out out_path"
+    bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
     
     # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
-    "plink --bfile " + geno_path + " --maf 0.01 --make-bed --out " + geno_path + "_MAF"
+    bash11 = "plink --bfile " + geno_path + "_variant --maf 0.01 --make-bed --out " + geno_path + "_MAF"
 
-
+    cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10, bash11]
+    for cmd in cmds:
+        subprocess.run(cmd, shell=True)
 
         
 
@@ -185,41 +187,46 @@ geno_variant = geno_relatedness + "_variant"
     #new elif statement
 
 # het pruning
-het_pruning(geno, out)
+# het_pruning(geno, out)
+# call_rate_pruning(geno_het, out)
+# sex_check(geno_call_rate, out)
+# relatedness_pruning(geno_sex, out)
+variant_pruning(geno_relatedness, out)
+
 
 # check if geno_het output exists, if not, run on original geno data (there may not have been anything pruned in previous step and thus, no new file created)
-if os.path.exists(geno_het + ".bim"):
-    call_rate_pruning(geno_het, out)
-else:
-    call_rate_pruning(geno, out)
+# if os.path.exists(geno_het + ".bim"):
+#     call_rate_pruning(geno_het, out)
+# else:
+#     call_rate_pruning(geno, out)
 
-# check if geno_call_rate exists, if not, check geno_het, if not, use original
-if os.path.exists(geno_call_rate + ".bim"):
-    sex_check(geno_call_rate, out)
-elif os.path.exists(geno_het + ".bim"):
-    sex_check(geno_het, out)
-else:
-    sex_check(geno, out)
+# # check if geno_call_rate exists, if not, check geno_het, if not, use original
+# if os.path.exists(geno_call_rate + ".bim"):
+#     sex_check(geno_call_rate, out)
+# elif os.path.exists(geno_het + ".bim"):
+#     sex_check(geno_het, out)
+# else:
+#     sex_check(geno, out)
 
-if os.path.exists(geno_sex + ".bim"):
-    relatedness_pruning(geno_sex, out)  
-elif os.path.exists(geno_call_rate + ".bim"):
-    relatedness_pruning(geno_call_rate)
-elif os.path.exists(geno_het + ".bim"):
-    relatedness_pruning(geno_het, out)
-else:
-    relatedness_pruning(geno, out)
+# if os.path.exists(geno_sex + ".bim"):
+#     relatedness_pruning(geno_sex, out)  
+# elif os.path.exists(geno_call_rate + ".bim"):
+#     relatedness_pruning(geno_call_rate)
+# elif os.path.exists(geno_het + ".bim"):
+#     relatedness_pruning(geno_het, out)
+# else:
+#     relatedness_pruning(geno, out)
 
-if os.path.exists(geno_relatedness + ".bim"):
-    variant_pruning(geno_relatedness, out)
-elif os.path.exists(geno_sex + ".bim"):
-    variant_pruning(geno_sex, out)  
-elif os.path.exists(geno_call_rate + ".bim"):
-    variant_pruning(geno_call_rate)
-elif os.path.exists(geno_het + ".bim"):
-    variant_pruning(geno_het, out)
-else:
-    variant_pruning(geno, out)
+# if os.path.exists(geno_relatedness + ".bim"):
+#     variant_pruning(geno_relatedness, out)
+# elif os.path.exists(geno_sex + ".bim"):
+#     variant_pruning(geno_sex, out)  
+# elif os.path.exists(geno_call_rate + ".bim"):
+#     variant_pruning(geno_call_rate)
+# elif os.path.exists(geno_het + ".bim"):
+#     variant_pruning(geno_het, out)
+# else:
+#     variant_pruning(geno, out)
 
 
 

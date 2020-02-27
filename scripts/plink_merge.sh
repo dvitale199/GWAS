@@ -1,5 +1,5 @@
 #create merge list
-ls /data/CARD/AD/ADNI/sequence_data_hg38/genotypes/*.bim | sed 's/[.].*$//' > /data/vitaled2/test_data/ADNI/merge.list
+ls /data/CARD/AD/ADNI/sequence_data_hg38/genotypes/*.bim | sed 's/\.[^.]*$//' > /data/vitaled2/test_data/ADNI/merge.list
 
 # this will fail if there are multiallelic positions
 plink --allow-extra-chr --biallelic-only --keep-allele-order --autosome --make-bed --merge-list /data/vitaled2/test_data/ADNI/merge.list --out /data/vitaled2/test_data/ADNI/adni
@@ -11,4 +11,4 @@ for i in {1..22} X; do plink --bfile /data/CARD/AD/ADNI/sequence_data_hg38/genot
 ls /data/vitaled2/test_data/ADNI/*.bim | sed 's/[.].*$//' > /data/vitaled2/test_data/ADNI/merge.list
 
 # now try merge again
-plink --allow-extra-chr --biallelic-only --keep-allele-order --autosome --make-bed --bmerge-list /data/vitaled2/test_data/ADNI/merge.list --out /data/vitaled2/test_data/ADNI/clean/adni
+plink --allow-extra-chr --biallelic-only --keep-allele-order --autosome --make-bed --merge-list /data/vitaled2/test_data/ADNI/merge.list --out /data/vitaled2/test_data/ADNI/clean/adni
