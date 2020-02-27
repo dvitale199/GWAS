@@ -1,12 +1,12 @@
 #### THINGS TO ADD #####
 # -CLEANUP DURING EACH STEP
 # -FIX LOGGING TO SINGLE FILE
-# -FIX AWFUL CONDITIONAL METHOD
 # -FIGURE OUT WHERE PHENOS ARE FOR ADNI DATA AND MERGE
 # -FIGURE OUT WHAT IS FAILING ON VARIANT-LEVEL
+
+#### SEPARATE SCRIPTS #####
 # -AUTOMATE IMPUTATION VIA API
 # -GET PLINK AND HAIL GWAS RUNNING
-
 
 
 import subprocess
@@ -20,16 +20,32 @@ parser.add_argument('--out', type=str, default='out', help='Prefix for output (i
 
 args = parser.parse_args()
 
-print("PROCESSING THE FOLLOWING GENOTYPES:", args.geno)
+geno = args.geno
+out = args.out
 
-def logging(geno_path, out_path):
-    out_name = geno_path + "_GWAS_QC.log"
+def logging(geno_name, out_name):
+    out_name = geno_name + "_GWAS_QC.log"
     log = open(out_name, "a", newline='\n')
     
     return log
-    
+
+
+#### MAY WANT TO THINK ABOUT CHANGING INITIAL LOGGING! THIS MAY BE CONFUSING USING "log" BOTH WITHIN AND OUTSIDE OF FUNCTIONS
+log = logging(geno, out)
+log.write("RUNNING QC FOR " + geno)
+log.write("\n")
+log.write("***********************************************")
+log.write("\n")
+log.write("***********************************************")
+log.write("\n")
+log.write("***********************************************")
+log.write("\n")
+
+
+print("PROCESSING THE FOLLOWING GENOTYPES:", geno)
+
 #QC and data cleaning
-def het_pruning(geno_path, out_path):
+def het_pruning(geno_path, out_path, log=log):
     print("NOW PRUNING FOR HETEROZYGOSITY")
     
     bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
@@ -45,9 +61,6 @@ def het_pruning(geno_path, out_path):
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    log = logging(geno_path, out_path)
-    log.write("RUNNING QC FOR " + geno_path)
-    log.write("\n")
     log.write("PRUNING FOR HETEROZYGOSITY WITH THE FOLLOWING COMMANDS:")
     log.write("\n")
     log.write("\n")
@@ -57,13 +70,15 @@ def het_pruning(geno_path, out_path):
         log.write("\n")
         subprocess.run(cmd, shell=True)
         
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
-    log.close()
+    log.write("\n")    
         
-        
-def call_rate_pruning(geno_path, out_path):
+def call_rate_pruning(geno_path, out_path, log=log):
     print("PRUNING FOR CALL RATE")
     
     bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
@@ -71,7 +86,6 @@ def call_rate_pruning(geno_path, out_path):
     
     cmds = [bash1, bash2]
     
-    log = logging(geno_path, out_path)
     log.write("\n")
     log.write("PRUNING FOR CALL RATE WITH THE FOLLOWING COMMANDS:")
     log.write("\n")
@@ -82,13 +96,16 @@ def call_rate_pruning(geno_path, out_path):
         log.write("\n")
         subprocess.run(cmd, shell=True)
         
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
-    log.close()    
+    log.write("\n") 
         
 
-def sex_check(geno_path, out_path):
+def sex_check(geno_path, out_path, log=log):
     print("CHECKING SEXES")
     bash1 = "plink --bfile " + geno_path + " --check-sex 0.25 0.75 --maf 0.05 --out " + out_path + "gender_check1"
     bash2 = "plink --bfile "+ geno_path + " --chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out " + out_path + "gender_check2"
@@ -100,7 +117,6 @@ def sex_check(geno_path, out_path):
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    log = logging(geno_path, out_path)
     log.write("\n")
     log.write("PRUNING FOR SEX WITH THE FOLLOWING COMMANDS:")
     log.write("\n")
@@ -111,37 +127,50 @@ def sex_check(geno_path, out_path):
         log.write("\n")
         subprocess.run(cmd, shell=True)
         
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
+    log.write("\n")
     log.write("***********************************************")
-    log.close()
- 
-
-
-
-
-
+    log.write("\n")
 
 ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 # MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
         
         
-def relatedness_pruning(geno_path, out_path):
+def relatedness_pruning(geno_path, out_path, log=log):
     print("RELATEDNESS PRUNING")
     bash1 = "gcta --bfile " + geno_path + " --make-grm --out " + out_path + "GRM_matrix --autosome --maf 0.05" 
     bash2 = "gcta --grm-cutoff 0.125 --grm " + out_path + "GRM_matrix --out " + out_path + "GRM_matrix_0125 --make-grm"
     bash3 = "plink --bfile " + geno_path + " --keep " + out_path + "GRM_matrix_0125.grm.id --make-bed --out " + geno_path + "_relatedness"
     
     cmds = [bash1, bash2, bash3]
+    
+    
+    log.write("\n")
+    log.write("PRUNING FOR RELATEDNESS WITH THE FOLLOWING COMMANDS:")
+    log.write("\n")
+    log.write("\n")
+    
     for cmd in cmds:
+        log.write(cmd)
+        log.write("\n")
         subprocess.run(cmd, shell=True)
-
+        
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
         
         
 ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 
 ##variant checks
-def variant_pruning(geno_path, out_path):
+def variant_pruning(geno_path, out_path, log=log):
     print("VARIANT-LEVEL PRUNING")
     # variant missingness
     bash1 = "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
@@ -165,13 +194,25 @@ def variant_pruning(geno_path, out_path):
     bash11 = "plink --bfile " + geno_path + "_variant --maf 0.01 --make-bed --out " + geno_path + "_MAF"
 
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10, bash11]
+    
+    log.write("\n")
+    log.write("VARIANT-LEVEL PRUNING WITH THE FOLLOWING COMMANDS:")
+    log.write("\n")
+    log.write("\n")
+    
     for cmd in cmds:
+        log.write(cmd)
+        log.write("\n")
         subprocess.run(cmd, shell=True)
-
         
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
+    log.write("***********************************************")
+    log.write("\n")
 
-geno = args.geno
-out = args.out
 geno_het = geno + "_het"
 geno_call_rate = geno_het + "_call_rate"
 geno_sex = geno_call_rate + "_sex"
@@ -179,19 +220,14 @@ geno_relatedness = geno_sex + "_relatedness"
 geno_variant = geno_relatedness + "_variant"
 
 
-
-
-# NEED TO FIX THIS MONSTROSITY BELOW... SOMETHING LIKE:
-# [LIST OF STEPS]
-# for each step after het_pruning:
-    #new elif statement
-
 # het pruning
 het_pruning(geno, out)
 call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
 relatedness_pruning(geno_sex, out)
 variant_pruning(geno_relatedness, out)
+
+log.close()
 
 
 
