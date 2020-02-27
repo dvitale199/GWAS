@@ -187,11 +187,14 @@ geno_variant = geno_relatedness + "_variant"
     #new elif statement
 
 # het pruning
-# het_pruning(geno, out)
-# call_rate_pruning(geno_het, out)
-# sex_check(geno_call_rate, out)
-# relatedness_pruning(geno_sex, out)
+het_pruning(geno, out)
+call_rate_pruning(geno_het, out)
+sex_check(geno_call_rate, out)
+relatedness_pruning(geno_sex, out)
 variant_pruning(geno_relatedness, out)
+
+
+
 
 
 # check if geno_het output exists, if not, run on original geno data (there may not have been anything pruned in previous step and thus, no new file created)
