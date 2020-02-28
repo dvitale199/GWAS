@@ -1,5 +1,6 @@
 #### THINGS TO ADD #####
 # -CLEANUP DURING EACH STEP
+# -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT
 # -FIX LOGGING TO SINGLE FILE
 # -FIGURE OUT WHERE PHENOS ARE FOR ADNI DATA AND MERGE
 # -FIGURE OUT WHAT IS FAILING ON VARIANT-LEVEL
@@ -176,9 +177,9 @@ def variant_pruning(geno_path, out_path, log=log):
     bash1 = "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
     
     #missingness by case control (--test-missing), using P > 1E-4
-    bash2 = "plink --bfile " + geno_path + " --test-missing --out " + out_path + "missing_snps" 
+    bash2 = "plink --bfile " + geno_path + "_geno --test-missing --out " + out_path + "missing_snps" 
     bash3 = "awk '{if ($5 <= 0.0001) print $2 }' " + out_path + "missing_snps.missing > " + out_path + "missing_snps_1E4.txt"
-    bash4 = "plink --bfile " + geno_path + " --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
+    bash4 = "plink --bfile " + geno_path + "_geno --exclude " + out_path + "missing_snps_1E4.txt --make-bed --out " + geno_path + "_missing1"
     
     #missingness by haplotype (--test-mishap), using P > 1E-4
     bash5 = "plink --bfile " + geno_path + "_missing1 --test-mishap --out " + geno_path + "_missing_hap" 
@@ -186,6 +187,10 @@ def variant_pruning(geno_path, out_path, log=log):
     bash7 = "sed 's/|/\/g' " + out_path + "missing_haps_1E4.txt > " + out_path + "missing_haps_1E4_final.txt"
     bash8 = "plink --bfile " + geno_path + " --exclude " + out_path + "missing_haps_1E4_final.txt --make-bed --out " +  geno_path + "_missing2"
     
+    
+    
+    
+    ###### THIS DOES NOT WORK WITHOUT PHENOTYPES!!!!!!!!
     #HWE from controls only using P > 1E-4
     bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out out_path"
     bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
