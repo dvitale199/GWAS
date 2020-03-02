@@ -19,22 +19,23 @@ out = args.out
 #DATA PREP
 
 def prep_data(geno_path, out_path):
+    os.chdir(out_path)
     # download file to check
-    bash1 = "wget " + "http://www.well.ox.ac.uk/~wrayner/tools/HRC-1000G-check-bim.v4.2.5.zip -P " + out_path
+    bash1 = "wget http://www.well.ox.ac.uk/~wrayner/tools/HRC-1000G-check-bim.v4.2.5.zip -P " + out_path
      
     bash2 = "unzip " + out_path + "HRC-1000G-check-bim.v4.2.5.zip -d " + out_path
-    ######### ADD LINE BELOW FOR REF
-    # wget ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz
     
+    bash3 = "wget ftp://ngs.sanger.ac.uk/production/hrc/HRC.r1-1/HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz -P " + out_path
+    bash4 = "gunzip " + out_path + "HRC.r1-1.GRCh37.wgs.mac5.sites.tab.gz"
     # make your .frq file
-    bash3 = "plink --bfile " + geno_path + " --freq --out " + geno_path
+    bash5 = "plink --bfile " + geno_path + " --freq --out " + geno_path
 
-    bash4 = "perl " + out_path + "HRC-1000G-check-bim.pl -b " + geno_path + ".bim -f " + geno_path + ".frq -r " + out_path + "HRC.r1-1.GRCh37.wgs.mac5.sites.tab -h"
+    bash6 = "perl " + out_path + "HRC-1000G-check-bim.pl -b " + geno_path + ".bim -f " + geno_path + ".frq -r " + out_path + "HRC.r1-1.GRCh37.wgs.mac5.sites.tab -h"
 
     # then run to fix your data
-    bash5 = "sh " + out_path + "Run-plink.sh"
+    bash7 = "sh " + out_path + "Run-plink.sh"
     
-    cmds = [bash1, bash2, bash3, bash4, bash5]
+    cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
