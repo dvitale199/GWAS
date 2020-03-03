@@ -40,20 +40,23 @@ def prep_data(geno_path, out_path):
     for cmd in cmds:
         subprocess.run(cmd, shell=True)
 
+def vcf_prep(geno_path, out_path):
+    # then make vcf files
+
+    for i in range(1,24):
         
+        bash1 = "plink --bfile " + geno_path + "-updated-chr" + str(i) + " --recode vcf --chr " + str(i) + " --out " + geno_path + "_chr" + str(i)
+        print(bash1)
+        subprocess.run(bash1, shell=True)
+
+    ## then sort and zip
+    for i in range(1,24):
         
-prep_data(geno, out)        
-#     # then make vcf files
+        bash2 = "vcf-sort " + geno_path + "_chr" + str(i) + ".vcf | bgzip -c > pre_impute_" + geno_path + "_chr" + str(i) + ".vcf.gz"
+        print(bash2)
+        subprocess.run(bash2, shell=True)
+    # and then you are ready to submit to the imputation server
 
-#     for i in range(1,24):
-#       plink --bfile YOURFILE-updated-chr$chnum --recode vcf --chr $chnum --out YOURFILE$chnum 
 
-
-#     ## then sort and zip
-
-#     for chnum in {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23};
-#       do
-#         vcf-sort YOURFILE$chnum.vcf | bgzip -c >  pre_impute_YOURFILE_$chnum.vcf.gz
-#     done
-
-#     # and then you are ready to submit to the imputation server
+# prep_data(geno, out)
+vcf_prep(geno, out)
