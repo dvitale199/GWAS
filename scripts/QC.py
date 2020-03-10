@@ -2,8 +2,7 @@
 # -CLEANUP DURING EACH STEP
 # -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT
 # -FIX LOGGING TO SINGLE FILE
-# -FIGURE OUT WHERE PHENOS ARE FOR ADNI DATA AND MERGE
-# -FIGURE OUT WHAT IS FAILING ON VARIANT-LEVEL
+# -Make toggle for rare variants
 
 #### SEPARATE SCRIPTS #####
 # -AUTOMATE IMPUTATION VIA API
@@ -171,7 +170,7 @@ def relatedness_pruning(geno_path, out_path, log=log):
 ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 
 ##variant checks
-def variant_pruning(geno_path, out_path, log=log):
+def variant_pruning(geno_path, out_path, rare=False, log=log):
     print("VARIANT-LEVEL PRUNING")
     # variant missingness
     bash1 = "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
@@ -192,13 +191,14 @@ def variant_pruning(geno_path, out_path, log=log):
     
     ###### THIS DOES NOT WORK WITHOUT PHENOTYPES!!!!!!!!
     #HWE from controls only using P > 1E-4
-    bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out out_path"
+    bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out " + out_path + "plink"
     bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
+    
     
     # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
     bash11 = "plink --bfile " + geno_path + "_variant --maf 0.01 --make-bed --out " + geno_path + "_MAF"
 
-    cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10, bash11]
+    cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10]
     
     log.write("\n")
     log.write("VARIANT-LEVEL PRUNING WITH THE FOLLOWING COMMANDS:")
@@ -209,6 +209,12 @@ def variant_pruning(geno_path, out_path, log=log):
         log.write(cmd)
         log.write("\n")
         subprocess.run(cmd, shell=True)
+        if rare:
+            log.write("FINAL MAF PRUNING (0.01) SKIPPED... RARE VARIANTS LEFT ALONE")
+        else:
+            subprocess.run(bash11, shell=True)
+            log.write(bash11)
+            
         
     log.write("\n")
     log.write("***********************************************")
@@ -231,6 +237,8 @@ call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
 relatedness_pruning(geno_sex, out)
 variant_pruning(geno_relatedness, out)
+
+
 
 log.close()
 
