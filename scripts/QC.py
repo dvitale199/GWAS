@@ -1,8 +1,10 @@
 #### THINGS TO ADD #####
+# -stdout/stderr output to log after each step
 # -CLEANUP DURING EACH STEP
 # -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT
 # -FIX LOGGING TO SINGLE FILE
 # -Make toggle for rare variants
+# -Need method to check file path
 
 #### SEPARATE SCRIPTS #####
 # -AUTOMATE IMPUTATION VIA API
@@ -137,8 +139,7 @@ def sex_check(geno_path, out_path, log=log):
 
 ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 # MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
-        
-        
+         
 def relatedness_pruning(geno_path, out_path, log=log):
     print("RELATEDNESS PRUNING")
     bash1 = "gcta --bfile " + geno_path + " --make-grm --out " + out_path + "GRM_matrix --autosome --maf 0.05" 
@@ -187,16 +188,14 @@ def variant_pruning(geno_path, out_path, rare=False, log=log):
     bash8 = "plink --bfile " + geno_path + " --exclude " + out_path + "missing_haps_1E4_final.txt --make-bed --out " +  geno_path + "_missing2"
     
     
-    
-    
     ###### THIS DOES NOT WORK WITHOUT PHENOTYPES!!!!!!!!
     #HWE from controls only using P > 1E-4
     bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out " + out_path + "plink"
-    bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_variant"
+    bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_HWE"
     
     
     # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
-    bash11 = "plink --bfile " + geno_path + "_variant --maf 0.01 --make-bed --out " + geno_path + "_MAF"
+    bash11 = "plink --bfile " + geno_path + "_HWE --maf 0.01 --make-bed --out " + geno_path + "_MAF"
 
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10]
     
@@ -209,12 +208,20 @@ def variant_pruning(geno_path, out_path, rare=False, log=log):
         log.write(cmd)
         log.write("\n")
         subprocess.run(cmd, shell=True)
-        if rare:
-            log.write("FINAL MAF PRUNING (0.01) SKIPPED... RARE VARIANTS LEFT ALONE")
-        else:
-            subprocess.run(bash11, shell=True)
-            log.write(bash11)
-            
+
+    if rare:
+        log.write("SKIPPING FINAL MAF PRUNING (0.01)... RARE VARIANTS LEFT ALONE")
+        bash_mv = "mv " + geno_path + "_HWE " + geno_path + "_variant"
+        subprocess.run(bash_mv, shell=True)
+        log.write("MOVED " + geno_path + "_HWE to " + geno_path + "_variant")
+    else:
+        log.write("PRUNING RARE VARIANTS (MAF 0.O1):")
+        subprocess.run(bash11, shell=True)
+        log.write(bash11)
+        bash_mv = "mv " + geno_path + "_MAF " + geno_path + "_variant"
+        subprocess.run(bash_mv, shell=True)
+        log.write("MOVED " + geno_path + "_HWE_MAF to " + geno_path + "_variant")
+        
         
     log.write("\n")
     log.write("***********************************************")
@@ -230,8 +237,7 @@ geno_sex = geno_call_rate + "_sex"
 geno_relatedness = geno_sex + "_relatedness"
 geno_variant = geno_relatedness + "_variant"
 
-
-# het pruning
+# run pruning steps
 het_pruning(geno, out)
 call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
