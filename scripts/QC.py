@@ -15,6 +15,10 @@ import subprocess
 import argparse
 import pandas as pd
 import os
+import glob
+import shutil
+import sys
+from contextlib import redirect_stderr, redirect_stdout
 
 parser = argparse.ArgumentParser(description='Arguments for Genotyping QC (data in Plink .bim/.bam/.fam format)')
 parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
@@ -25,9 +29,19 @@ args = parser.parse_args()
 geno = args.geno
 out = args.out
 
+
+
 def logging(geno_name, out_name):
-    out_name = geno_name + "_GWAS_QC.log"
-    log = open(out_name, "a", newline='\n')
+    out = geno_name + "_GWAS_QC.log"
+    if os.path.exists(out):
+        # if log already exists, delete and then open new one in "append" mode
+        bash_clear_log = "rm " + out
+        subprocess.run(bash_clear_log, shell=True)
+        log = open(out, "a", newline='\n')
+    else:
+        #if log does not exist, open new one in "append" mode
+        log = open(out, "a", newline='\n')
+        
     
     return log
 
@@ -69,7 +83,7 @@ def het_pruning(geno_path, out_path, log=log):
     
     for cmd in cmds:
         log.write(cmd)
-        log.write("\n")
+        log.write("\n")  
         subprocess.run(cmd, shell=True)
         
     log.write("\n")
@@ -195,7 +209,7 @@ def variant_pruning(geno_path, out_path, rare=False, log=log):
     
     
     # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
-    bash11 = "plink --bfile " + geno_path + "_HWE --maf 0.01 --make-bed --out " + geno_path + "_MAF"
+    bash11 = "plink --bfile " + geno_path + "_HWE --maf 0.01 --make-bed --out " + geno_path + "_HWE_MAF"
 
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10]
     
@@ -210,16 +224,28 @@ def variant_pruning(geno_path, out_path, rare=False, log=log):
         subprocess.run(cmd, shell=True)
 
     if rare:
+        print("rare")
         log.write("SKIPPING FINAL MAF PRUNING (0.01)... RARE VARIANTS LEFT ALONE")
-        bash_mv = "mv " + geno_path + "_HWE " + geno_path + "_variant"
-        subprocess.run(bash_mv, shell=True)
+#         bash_mv = "for f in "  + geno_path + "_HWE*; do mv $f " + geno_path + "_variant; done"
+        
+        exts = [".bed",".bim",".fam"]
+        for ext in exts:
+            shutil.move(geno_path + "_HWE" + ext, geno_path + "_variant" + ext)
+        
+        
+#         subprocess.run(bash_mv, shell=True)
         log.write("MOVED " + geno_path + "_HWE to " + geno_path + "_variant")
+    
     else:
         log.write("PRUNING RARE VARIANTS (MAF 0.O1):")
         subprocess.run(bash11, shell=True)
         log.write(bash11)
-        bash_mv = "mv " + geno_path + "_MAF " + geno_path + "_variant"
-        subprocess.run(bash_mv, shell=True)
+        
+        exts = [".bed",".bim",".fam",".log",".hh"]
+        for ext in exts:
+            shutil.move(geno_path + "_HWE_MAF" + ext, geno_path + "_variant" + ext)
+#         bash_mv = "mv " + geno_path + "_MAF " + geno_path + "_variant"
+#         subprocess.run(bash_mv, shell=True)
         log.write("MOVED " + geno_path + "_HWE_MAF to " + geno_path + "_variant")
         
         
@@ -243,6 +269,7 @@ call_rate_pruning(geno_het, out)
 sex_check(geno_call_rate, out)
 relatedness_pruning(geno_sex, out)
 variant_pruning(geno_relatedness, out)
+
 
 
 
