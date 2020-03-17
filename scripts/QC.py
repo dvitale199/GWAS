@@ -31,7 +31,7 @@ out = args.out
 
 
 
-def logging(geno_name, out_name):
+def logging(geno_name):
     out = geno_name + "_GWAS_QC.log"
     if os.path.exists(out):
         # if log already exists, delete and then open new one in "append" mode
@@ -42,12 +42,13 @@ def logging(geno_name, out_name):
         #if log does not exist, open new one in "append" mode
         log = open(out, "a", newline='\n')
         
-    
     return log
 
+    
 
 #### MAY WANT TO THINK ABOUT CHANGING INITIAL LOGGING! THIS MAY BE CONFUSING USING "log" BOTH WITHIN AND OUTSIDE OF FUNCTIONS
-log = logging(geno, out)
+log = logging(geno)
+
 log.write("RUNNING QC FOR " + geno)
 log.write("\n")
 log.write("***********************************************")
@@ -58,42 +59,71 @@ log.write("***********************************************")
 log.write("\n")
 
 
+def run_cmds(cmds_list, pruning_step, log=log):
+        log.write(pruning_step + " WITH THE FOLLOWING COMMANDS:")
+        log.write("\n")
+        log.write("\n")
+
+        for cmd in cmds_list:
+            log.write(cmd)
+            log.write("\n")  
+            subprocess.run(cmd, shell=True)
+
+    #         cmd_log = sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime)[-1]
+
+
+        log.write("\n")
+        log.write("***********************************************")
+        log.write("\n")
+        log.write("***********************************************")
+        log.write("\n")
+        log.write("***********************************************")
+        log.write("\n")  
+
+        
+
 print("PROCESSING THE FOLLOWING GENOTYPES:", geno)
 
 #QC and data cleaning
-def het_pruning(geno_path, out_path, log=log):
-    print("NOW PRUNING FOR HETEROZYGOSITY")
-    
+def het_pruning(geno_path, out_path):
+#     print("NOW PRUNING FOR HETEROZYGOSITY")
+    step = "NOW PRUNING FOR HETEROZYGOSITY"
+    print(step)
     bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
     bash2 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
     bash3 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
-
-    # bash for now. convert these to python
     bash4 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
     bash5 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
     bash6 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
-    
     bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    log.write("PRUNING FOR HETEROZYGOSITY WITH THE FOLLOWING COMMANDS:")
-    log.write("\n")
-    log.write("\n")
+    run_cmds(cmds, step)
     
-    for cmd in cmds:
-        log.write(cmd)
-        log.write("\n")  
-        subprocess.run(cmd, shell=True)
+    
+    
+#     log.write("PRUNING FOR HETEROZYGOSITY WITH THE FOLLOWING COMMANDS:")
+#     log.write("\n")
+#     log.write("\n")
+    
+#     for cmd in cmds:
+#         log.write(cmd)
+#         log.write("\n")  
+#         subprocess.run(cmd, shell=True)
         
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")    
+# #         cmd_log = sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime)[-1]
         
+        
+#     log.write("\n")
+#     log.write("***********************************************")
+#     log.write("\n")
+#     log.write("***********************************************")
+#     log.write("\n")
+#     log.write("***********************************************")
+#     log.write("\n")    
+
+    
 def call_rate_pruning(geno_path, out_path, log=log):
     print("PRUNING FOR CALL RATE")
     
@@ -265,10 +295,10 @@ geno_variant = geno_relatedness + "_variant"
 
 # run pruning steps
 het_pruning(geno, out)
-call_rate_pruning(geno_het, out)
-sex_check(geno_call_rate, out)
-relatedness_pruning(geno_sex, out)
-variant_pruning(geno_relatedness, out)
+# call_rate_pruning(geno_het, out)
+# sex_check(geno_call_rate, out)
+# relatedness_pruning(geno_sex, out)
+# variant_pruning(geno_relatedness, out)
 
 
 
