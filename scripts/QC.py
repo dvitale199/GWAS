@@ -2,7 +2,7 @@
 # -stdout/stderr output to log after each step
 # -CLEANUP DURING EACH STEP
 # -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT (OR JUST DELETE ALL EXTRANEOUS FILES)
-# -FIX LOGGING TO SINGLE FILE
+# -CHECK THAT LOGGING METHOD IS USEFUL/NEAT ENOUGH
 # -METHOD TO CHECK FILE PATH AT INPUT
 # -COMMENTS!!!!!!!
 
@@ -25,13 +25,11 @@ parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string 
 parser.add_argument('--out', type=str, default='out', help='Prefix for output (including path)')
 parser.add_argument('--rare', default=False, action="store_true", help='Pruning toggle for rare variants. If --rare is used, final MAF pruning (0.01) will not be conducted, otherwise, rare variants will be pruned')
 
-
 args = parser.parse_args()
 
 geno = args.geno
 out = args.out
 rare = args.rare
-
 
 # This will eventually need to be a class which checks for new log outputs in each step and appends contents between plink runs
 def logger(geno_name):
@@ -46,7 +44,6 @@ def logger(geno_name):
         log = open(out, "a", newline='\n')
         
     return log
-
 # open log
 log = logger(geno)
 
@@ -59,7 +56,6 @@ log.write("\n")
 log.write("***********************************************")
 log.write("\n")
 
-
 def run_cmds(cmds_list, pruning_step, outpath, log=log):
         log.write(pruning_step + " WITH THE FOLLOWING COMMANDS:")
         log.write("\n")
@@ -68,6 +64,7 @@ def run_cmds(cmds_list, pruning_step, outpath, log=log):
         
         for cmd in cmds_list:
             log.write(cmd)
+            log.write("\n")
             log.write("\n")
             
             # check length of list of files ending in ".log"
@@ -88,10 +85,8 @@ def run_cmds(cmds_list, pruning_step, outpath, log=log):
                 log.write(new_log_read)
                 log.write("\n")
                 log.write("***********************************************")
-                
-                
-                
-                    
+                log.write("\n")
+                log.write("\n")
 
         log.write("\n")
         log.write("***********************************************")
@@ -220,6 +215,16 @@ def rare_prune(geno_path, out_path, log=log, rare=rare):
         subprocess.run(bash, shell=True)
         log.write(bash)
         log.write("\n")
+        
+        new_log = open(geno_path + ".log", "r")
+        new_log_read = new_log.read()
+        new_log.close()
+                
+        log.write(new_log_read)
+        log.write("\n")
+        log.write("***********************************************")
+        log.write("\n")
+        log.write("\n")
 
         exts = [".bed",".bim",".fam",".log",".hh"]
         for ext in exts:
@@ -228,7 +233,9 @@ def rare_prune(geno_path, out_path, log=log, rare=rare):
         log.write("MOVED " + geno_path + "_MAF to " + geno_path + "_final")
         log.write("\n")
 
-    
+
+
+
 # create new names for each step
 geno_het = geno + "_het"
 geno_call_rate = geno_het + "_call_rate"
@@ -245,7 +252,6 @@ relatedness_pruning(geno_sex, out)
 variant_pruning(geno_relatedness, out)
 rare_prune(geno_variant, out)
 
-
 log.close()
 
 
@@ -253,7 +259,7 @@ log.close()
 
 ###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
 
-#more code to be added
+#more code that may or may not be important
 """
 
 # post-imputation
