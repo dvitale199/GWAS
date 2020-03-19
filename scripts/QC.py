@@ -1,10 +1,10 @@
 #### THINGS TO ADD #####
 # -stdout/stderr output to log after each step
 # -CLEANUP DURING EACH STEP
-# -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT
+# -NEED TO CREATE MORE ORGANIZED DIRECTORY LAYOUT (OR JUST DELETE ALL EXTRANEOUS FILES)
 # -FIX LOGGING TO SINGLE FILE
-# -Make toggle for rare variants
-# -Need method to check file path
+# -METHOD TO CHECK FILE PATH AT INPUT
+# -COMMENTS!!!!!!!
 
 #### SEPARATE SCRIPTS #####
 # -AUTOMATE IMPUTATION VIA API
@@ -23,15 +23,18 @@ from contextlib import redirect_stderr, redirect_stdout
 parser = argparse.ArgumentParser(description='Arguments for Genotyping QC (data in Plink .bim/.bam/.fam format)')
 parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
 parser.add_argument('--out', type=str, default='out', help='Prefix for output (including path)')
+parser.add_argument('--rare', default=False, action="store_true", help='Pruning toggle for rare variants. If --rare is used, final MAF pruning (0.01) will not be conducted, otherwise, rare variants will be pruned')
+
 
 args = parser.parse_args()
 
 geno = args.geno
 out = args.out
+rare = args.rare
 
 
-
-def logging(geno_name):
+# This will eventually need to be a class which checks for new log outputs in each step and appends contents between plink runs
+def logger(geno_name):
     out = geno_name + "_GWAS_QC.log"
     if os.path.exists(out):
         # if log already exists, delete and then open new one in "append" mode
@@ -44,10 +47,8 @@ def logging(geno_name):
         
     return log
 
-    
-
-#### MAY WANT TO THINK ABOUT CHANGING INITIAL LOGGING! THIS MAY BE CONFUSING USING "log" BOTH WITHIN AND OUTSIDE OF FUNCTIONS
-log = logging(geno)
+# open log
+log = logger(geno)
 
 log.write("RUNNING QC FOR " + geno)
 log.write("\n")
@@ -59,18 +60,38 @@ log.write("***********************************************")
 log.write("\n")
 
 
-def run_cmds(cmds_list, pruning_step, log=log):
+def run_cmds(cmds_list, pruning_step, outpath, log=log):
         log.write(pruning_step + " WITH THE FOLLOWING COMMANDS:")
         log.write("\n")
         log.write("\n")
-
+        
+        
         for cmd in cmds_list:
             log.write(cmd)
-            log.write("\n")  
+            log.write("\n")
+            
+            # check length of list of files ending in ".log"
+            logs_count = len(sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime))
             subprocess.run(cmd, shell=True)
-
-    #         cmd_log = sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime)[-1]
-
+            
+            # check length of new list of files ending in ".log". if longer than original, append newest .log file to running logfile
+            # this indicates new log created
+            new_logs_count = len(sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime))
+            
+            if new_logs_count > logs_count:
+                cmd_log = sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime)[-1]
+                
+                new_log = open(cmd_log, "r")
+                new_log_read = new_log.read()
+                new_log.close()
+                
+                log.write(new_log_read)
+                log.write("\n")
+                log.write("***********************************************")
+                
+                
+                
+                    
 
         log.write("\n")
         log.write("***********************************************")
@@ -79,8 +100,6 @@ def run_cmds(cmds_list, pruning_step, log=log):
         log.write("\n")
         log.write("***********************************************")
         log.write("\n")  
-
-        
 
 print("PROCESSING THE FOLLOWING GENOTYPES:", geno)
 
@@ -99,60 +118,23 @@ def het_pruning(geno_path, out_path):
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    run_cmds(cmds, step)
-    
-    
-    
-#     log.write("PRUNING FOR HETEROZYGOSITY WITH THE FOLLOWING COMMANDS:")
-#     log.write("\n")
-#     log.write("\n")
-    
-#     for cmd in cmds:
-#         log.write(cmd)
-#         log.write("\n")  
-#         subprocess.run(cmd, shell=True)
-        
-# #         cmd_log = sorted(glob.glob(outpath + '*.log'), key=os.path.getmtime)[-1]
-        
-        
-#     log.write("\n")
-#     log.write("***********************************************")
-#     log.write("\n")
-#     log.write("***********************************************")
-#     log.write("\n")
-#     log.write("***********************************************")
-#     log.write("\n")    
+    run_cmds(cmds, step, out_path)
 
     
-def call_rate_pruning(geno_path, out_path, log=log):
-    print("PRUNING FOR CALL RATE")
-    
+def call_rate_pruning(geno_path, out_path):
+    step = "PRUNING FOR CALL RATE"
+    print(step)
     bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
     bash2 = "mv " + geno_path + "_after_call_rate.irem " + out_path + "CALL_RATE_OUTLIERS.txt"
     
     cmds = [bash1, bash2]
     
-    log.write("\n")
-    log.write("PRUNING FOR CALL RATE WITH THE FOLLOWING COMMANDS:")
-    log.write("\n")
-    log.write("\n")
-    
-    for cmd in cmds:
-        log.write(cmd)
-        log.write("\n")
-        subprocess.run(cmd, shell=True)
-        
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n") 
-        
+    run_cmds(cmds, step, out_path)
 
-def sex_check(geno_path, out_path, log=log):
-    print("CHECKING SEXES")
+
+def sex_check(geno_path, out_path):
+    step = "CHECKING SEXES"
+    print(step)
     bash1 = "plink --bfile " + geno_path + " --check-sex 0.25 0.75 --maf 0.05 --out " + out_path + "gender_check1"
     bash2 = "plink --bfile "+ geno_path + " --chr 23 --from-bp 2699520 --to-bp 154931043 --maf 0.05 --geno 0.05 --hwe 1E-5 --check-sex  0.25 0.75 --out " + out_path + "gender_check2"
     bash3 = "grep 'PROBLEM' " + out_path + "gender_check1.sexcheck > " + out_path + "problems1.txt"
@@ -163,60 +145,27 @@ def sex_check(geno_path, out_path, log=log):
     
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
     
-    log.write("\n")
-    log.write("PRUNING FOR SEX WITH THE FOLLOWING COMMANDS:")
-    log.write("\n")
-    log.write("\n")
+    run_cmds(cmds, step, out_path)
     
-    for cmd in cmds:
-        log.write(cmd)
-        log.write("\n")
-        subprocess.run(cmd, shell=True)
-        
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-
-###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
+    
 # MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
          
-def relatedness_pruning(geno_path, out_path, log=log):
-    print("RELATEDNESS PRUNING")
+def relatedness_pruning(geno_path, out_path):
+    step = "RELATEDNESS PRUNING"
+    print(step)
     bash1 = "gcta --bfile " + geno_path + " --make-grm --out " + out_path + "GRM_matrix --autosome --maf 0.05" 
     bash2 = "gcta --grm-cutoff 0.125 --grm " + out_path + "GRM_matrix --out " + out_path + "GRM_matrix_0125 --make-grm"
     bash3 = "plink --bfile " + geno_path + " --keep " + out_path + "GRM_matrix_0125.grm.id --make-bed --out " + geno_path + "_relatedness"
     
     cmds = [bash1, bash2, bash3]
     
-    
-    log.write("\n")
-    log.write("PRUNING FOR RELATEDNESS WITH THE FOLLOWING COMMANDS:")
-    log.write("\n")
-    log.write("\n")
-    
-    for cmd in cmds:
-        log.write(cmd)
-        log.write("\n")
-        subprocess.run(cmd, shell=True)
+    run_cmds(cmds, step, out_path)
+       
         
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-        
-        
-###########################################################################################################################################################################################################################################################################################################################################################################################################################################################################
-
 ##variant checks
-def variant_pruning(geno_path, out_path, rare=False, log=log):
-    print("VARIANT-LEVEL PRUNING")
+def variant_pruning(geno_path, out_path):
+    step = "VARIANT-LEVEL PRUNING"
+    print(step)
     # variant missingness
     bash1 = "plink --bfile " + geno_path + " --make-bed --out " + geno_path + "_geno --geno 0.05"
     
@@ -236,112 +185,68 @@ def variant_pruning(geno_path, out_path, rare=False, log=log):
     #HWE from controls only using P > 1E-4
     bash9 = "plink --bfile " + geno_path + "_missing2 --filter-controls --hwe 1E-4 --write-snplist --out " + out_path + "plink"
     bash10 = "plink --bfile " + geno_path + "_missing2 --extract " + out_path + "plink.snplist --make-bed --out " + geno_path + "_HWE"
-    
-    
-    # OPTIONAL STEP: the following may not be used if you want to use specific rare variants, otherwise, rare variants will be removed here
-    bash11 = "plink --bfile " + geno_path + "_HWE --maf 0.01 --make-bed --out " + geno_path + "_HWE_MAF"
 
     cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10]
     
-    log.write("\n")
-    log.write("VARIANT-LEVEL PRUNING WITH THE FOLLOWING COMMANDS:")
-    log.write("\n")
-    log.write("\n")
+    run_cmds(cmds, step, out_path)
     
-    for cmd in cmds:
-        log.write(cmd)
-        log.write("\n")
-        subprocess.run(cmd, shell=True)
+    exts = [".bed",".bim",".fam",".log",".hh"]
+    for ext in exts:
+        shutil.move(geno_path + "_HWE" + ext, geno_path + "_variant" + ext)
 
-    if rare:
-        print("rare")
-        log.write("SKIPPING FINAL MAF PRUNING (0.01)... RARE VARIANTS LEFT ALONE")
-#         bash_mv = "for f in "  + geno_path + "_HWE*; do mv $f " + geno_path + "_variant; done"
-        
-        exts = [".bed",".bim",".fam"]
-        for ext in exts:
-            shutil.move(geno_path + "_HWE" + ext, geno_path + "_variant" + ext)
-        
-        
-#         subprocess.run(bash_mv, shell=True)
-        log.write("MOVED " + geno_path + "_HWE to " + geno_path + "_variant")
     
-    else:
-        log.write("PRUNING RARE VARIANTS (MAF 0.O1):")
-        subprocess.run(bash11, shell=True)
-        log.write(bash11)
-        
+def rare_prune(geno_path, out_path, log=log, rare=rare):
+    # OPTIONAL STEP: if --rare flag included when running, rare variants will be left alone, otherwise they will be pruned with --maf 0.01
+    bash = "plink --bfile " + geno_path + " --maf 0.01 --make-bed --out " + geno_path + "_MAF"
+    
+    if rare:
+        print("SKIPPING FINAL MAF PRUNING (0.01)... RARE VARIANTS LEFT ALONE")
+        log.write("SKIPPING FINAL MAF PRUNING (0.01)... RARE VARIANTS LEFT ALONE")
+        log.write("\n")
+        log.write("\n")
+
         exts = [".bed",".bim",".fam",".log",".hh"]
         for ext in exts:
-            shutil.move(geno_path + "_HWE_MAF" + ext, geno_path + "_variant" + ext)
-#         bash_mv = "mv " + geno_path + "_MAF " + geno_path + "_variant"
-#         subprocess.run(bash_mv, shell=True)
-        log.write("MOVED " + geno_path + "_HWE_MAF to " + geno_path + "_variant")
-        
-        
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
-    log.write("***********************************************")
-    log.write("\n")
+            shutil.move(geno_path + ext, geno_path + "_final" + ext)
 
+        log.write("MOVED " + geno_path + " to " + geno_path + "_final")
+        log.write("\n")    
+
+    else:
+        print("RARE VARIANTS (MAF <= 0.O1) PRUNING")
+        log.write("RARE VARIANTS (MAF <= 0.O1) PRUNING WITH THE FOLLOWING COMMANDS:")
+        log.write("\n")
+        log.write("\n")
+        subprocess.run(bash, shell=True)
+        log.write(bash)
+        log.write("\n")
+
+        exts = [".bed",".bim",".fam",".log",".hh"]
+        for ext in exts:
+            shutil.move(geno_path + "_MAF" + ext, geno_path + "_final" + ext)
+            
+        log.write("MOVED " + geno_path + "_MAF to " + geno_path + "_final")
+        log.write("\n")
+
+    
+# create new names for each step
 geno_het = geno + "_het"
 geno_call_rate = geno_het + "_call_rate"
 geno_sex = geno_call_rate + "_sex"
 geno_relatedness = geno_sex + "_relatedness"
 geno_variant = geno_relatedness + "_variant"
+geno_final = geno_variant + "_final"
 
 # run pruning steps
 het_pruning(geno, out)
-# call_rate_pruning(geno_het, out)
-# sex_check(geno_call_rate, out)
-# relatedness_pruning(geno_sex, out)
-# variant_pruning(geno_relatedness, out)
-
-
+call_rate_pruning(geno_het, out)
+sex_check(geno_call_rate, out)
+relatedness_pruning(geno_sex, out)
+variant_pruning(geno_relatedness, out)
+rare_prune(geno_variant, out)
 
 
 log.close()
-
-
-
-
-
-# check if geno_het output exists, if not, run on original geno data (there may not have been anything pruned in previous step and thus, no new file created)
-# if os.path.exists(geno_het + ".bim"):
-#     call_rate_pruning(geno_het, out)
-# else:
-#     call_rate_pruning(geno, out)
-
-# # check if geno_call_rate exists, if not, check geno_het, if not, use original
-# if os.path.exists(geno_call_rate + ".bim"):
-#     sex_check(geno_call_rate, out)
-# elif os.path.exists(geno_het + ".bim"):
-#     sex_check(geno_het, out)
-# else:
-#     sex_check(geno, out)
-
-# if os.path.exists(geno_sex + ".bim"):
-#     relatedness_pruning(geno_sex, out)  
-# elif os.path.exists(geno_call_rate + ".bim"):
-#     relatedness_pruning(geno_call_rate)
-# elif os.path.exists(geno_het + ".bim"):
-#     relatedness_pruning(geno_het, out)
-# else:
-#     relatedness_pruning(geno, out)
-
-# if os.path.exists(geno_relatedness + ".bim"):
-#     variant_pruning(geno_relatedness, out)
-# elif os.path.exists(geno_sex + ".bim"):
-#     variant_pruning(geno_sex, out)  
-# elif os.path.exists(geno_call_rate + ".bim"):
-#     variant_pruning(geno_call_rate)
-# elif os.path.exists(geno_het + ".bim"):
-#     variant_pruning(geno_het, out)
-# else:
-#     variant_pruning(geno, out)
 
 
 
