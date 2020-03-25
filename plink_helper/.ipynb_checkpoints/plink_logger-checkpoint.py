@@ -5,11 +5,14 @@ class Logger:
         self.geno_path = geno_path
         self.out_path = out_path
         print("PROCESSING THE FOLLOWING GENOTYPES:", geno_path)
+        print()
         
         
     def logging(self):
         log_out_name = self.geno_path + ".PLINK_STEPS.log"
         print("logging to " + log_out_name)
+        print("***********************************************")
+        print()
         log = open(log_out_name, "a", newline='\n')
         log.write("***********************************************")
         log.write("\n")
@@ -21,6 +24,7 @@ class Logger:
         log.write("\n")
         log.write("***********************************************")
         log.write("\n")
+        log.write("\n")        
             
         return log
     

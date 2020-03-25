@@ -42,10 +42,4 @@ class Driver(Logger):
                 log.write("\n")
                 log.write("\n")
 
-        log.write("\n")
-        log.write("***********************************************")
-        log.write("\n")
-        log.write("***********************************************")
-        log.write("\n")
-        log.write("***********************************************")
-        log.write("\n")
+        log.close()
