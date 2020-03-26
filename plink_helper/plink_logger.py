@@ -1,9 +1,9 @@
 import os
 
 class Logger:
-    def __init__(self, geno_path, out_path):
+    def __init__(self, geno_path):
         self.geno_path = geno_path
-        self.out_path = out_path
+        self.out_path = self.geno_path.rsplit('/', 1)[0] + "/"
         print("PROCESSING THE FOLLOWING GENOTYPES:", geno_path)
         print()
         

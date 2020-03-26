@@ -6,8 +6,8 @@ import subprocess
 from plink_helper.plink_logger import Logger
 
 class Driver(Logger):
-    def __init__(self, geno_path, out_path):
-        super().__init__(geno_path, out_path)
+    def __init__(self, geno_path):
+        super().__init__(geno_path)
         
     def run_cmds(self, cmds_list, step):
         log = self.logging()
@@ -43,3 +43,4 @@ class Driver(Logger):
                 log.write("\n")
 
         log.close()
+        

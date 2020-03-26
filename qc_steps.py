@@ -17,7 +17,6 @@ from plink_helper.plink_driver import Driver
 # args = parser.parse_args()
 
 # geno_name = args.geno
-# out_path = args.out
 #rare_flag = args.rare
 
 # paths for testing (will be args)
@@ -28,8 +27,8 @@ rare_flag = False
 
 #QC and data cleaning
 class QC(Driver):
-    def __init__(self, geno_path, out_path, rare=rare_bool):
-        super().__init__(geno_path, out_path)
+    def __init__(self, geno_path, rare=rare_flag):
+        super().__init__(geno_path)
         # create new names for each step
         self.geno_het = geno_path + "_het"
         self.geno_call_rate = self.geno_het + "_call_rate"
@@ -37,12 +36,13 @@ class QC(Driver):
         self.geno_relatedness = self.geno_sex + "_relatedness"
         self.geno_variant = self.geno_relatedness + "_variant"
         self.geno_final = self.geno_variant + "_final"
-    
+        self.tmp_file_list = [self.geno_het, self.geno_call_rate, self.geno_sex, self.geno_relatedness, self.geno_variant, ]
+        
     def het_pruning(self):
         geno_path = self.geno_path
         out_path = self.out_path
         
-        step = "NOW PRUNING FOR HETEROZYGOSITY"
+        step = "PRUNING FOR HETEROZYGOSITY"
         print(step)
         
         bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
@@ -196,9 +196,21 @@ class QC(Driver):
             log.write("MOVED " + geno_path + "_MAF to " + geno_path + "_final")
             log.write("\n")
             log.close()
+            
+            
+    def cleanup(self):
+        print("CLEANING UP THE DIRECTORY OF INTERMEDIATE FILES")
+        print("***********************************************")
+        print()
+            
+        save_files = [self.geno_path + ext for ext in ['.bim','.bed','.fam','.log','.hh', '.PLINK_STEPS.log']] + [self.geno_final + ext for ext in ['.bim','.bed','.fam','.hh']]
+        all_files = glob.glob(self.out_path + '*')
+        rm_files = [x for x in all_files if x not in save_files]
+        for file in rm_files:
+            os.remove(file)
         
 # INSTANTIATE QC WITH INPUT NAME AND OUTPUT NAME     
-qc = QC(geno_name, out_name)
+qc = QC(geno_name)
 
 # NOW RUN COMMANDS
 # FIRST, CLEAR EXISTING LOGFILE
@@ -211,6 +223,7 @@ qc.sex_check()
 qc.relatedness_pruning()
 qc.variant_pruning()
 qc.rare_prune()
+qc.cleanup()
 
 print("DONE!!!!!!!")
 
