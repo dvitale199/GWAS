@@ -3,6 +3,7 @@ import argparse
 import os
 import requests
 import json
+import time
 
 #local imports
 from plink_helper.plink_driver import Driver
@@ -80,11 +81,65 @@ class Impute(Driver):
 
         # and then you are ready to submit to the imputation server
         
-    def impute(self, key, input_population='eur',vcf_list=None):
+    def check_impute_status(self, _key, _id):
+        
+        # imputation server url
+        url = 'https://imputationserver.sph.umich.edu/api/v2'
+
+        # add token to header (see authentication)
+        headers = {'X-Auth-Token' : _key }
+
+        # get all jobs
+        r = requests.get(url + "/jobs", headers=headers)
+        if r.status_code != 200:
+            raise Exception('GET /jobs/ {}'.format(r.status_code))
+        
+        status = r.json()
+        for stat in status['data']:
+            if stat['id'] == _id:
+                if stat['state'] == 1:
+                    print("Launching Job:", stat['id'])
+                elif stat['state'] == 2:
+                    print("Running Job:", stat['id'])
+                elif stat['state'] == 3:
+                    print(stat['id'], "returned state '3', have a look at jobs on the web front for more information")
+                elif stat['state'] == 5:
+                    print(stat['id'], "has failed. consult docs on data input to ensure your vcfs are correct")
+                elif stat['state'] == 4:
+                    print(stat['id'], "COMPLETED!")
+                
+                return stat['state']
+            
+            else:
+                pass
+        
+        
+        
+#         for stat in status['data']:
+#             if stat['id'] == _id:
+#                 if stat['complete']:
+#                     print(stat['id'],'is complete')
+#                     #insert script to pull results!!!!
+#                 else:
+#                     print(stat['id'],"still running!")
+        
+#                 return stat['complete']
+
+#             else:
+#                 pass
+                
+                
+        # print all jobs
+#         for job in r.json():
+#             print('{} [{}]'.format(job['id'], job['state']))
+
+    def pull_imputed_data(self):
+        pass
+   
+
+    def impute(self, key, input_population='eur', pw='imputer', vcf_list=None):
         geno_path = self.geno_path
         vcf_list = self.vcf_list_for_impute
-        
-
         
         # imputation server url
         url = 'https://imputationserver.sph.umich.edu/api/v2'
@@ -98,7 +153,7 @@ class Impute(Driver):
 
         data = {'input-mode' : 'imputation',
                 'input-files-source': 'file-upload',
-                '' 
+                'input-password': pw,
                 'input-refpanel': 'apps@hrc-r1.1',
                 'input-phasing': 'eagle',
                 'input-population': input_population}
@@ -106,42 +161,35 @@ class Impute(Driver):
         r = requests.post(url + "/jobs/submit/minimac4", files=files, headers=headers, data=data)
         if r.status_code != 200:
             raise Exception('POST /jobs/submit/minimac4 {}'.format(r.status_code))
+        
+        impute_id = r.json()['id']
+        message = r.json()['message']
 
-        # print message
-        print(r.json()['message'])
-        print(r.json()['id'])
-        self.impute_id = r.json()['id']
-
-    def check_impute_status(self, key):
-        impute_id = self.impute_id
-        # imputation server url
-        url = 'https://imputationserver.sph.umich.edu/api/v2'
-
-        # add token to header (see authentication)
-        headers = {'X-Auth-Token' : token }
-
-        # get all jobs
-        r = requests.get(url + "/jobs", headers=headers)
-        if r.status_code != 200:
-            raise Exception('GET /jobs/ {}'.format(r.status_code))
+        print(message)
+        print(impute_id)
+        print('***************************')
+        print('* * * * * * * * * * * * * *') 
         
-        status = r.json()
-        for stat in status['data']:
-            if stat['id'] == impute_id:
-                if stat['complete']:
-                    print(stat['id'],'is complete')
-                    #insert script to pull results!!!!
-            else:
-                print("still running!")
+        imp_state = 0
+        while imp_state < 3:
+            time.sleep(5)
+            print('***************************')
+            time.sleep(5)
+            print('***************************')
+            time.sleep(5)
+            print('***************************')
+            time.sleep(5)
+            print('***************************')
+            time.sleep(5)
+            print('***************************')
+            time.sleep(5)
+            os.system('cls')
+            imp_state = check_impute_status(key, impute_id)
         
-        
-        
-        # print all jobs
-#         for job in r.json():
-#             print('{} [{}]'.format(job['id'], job['state']))
-        
+    
+    
 
 imputer = Impute(geno)
 # imputer.impute_prep_data()
 # imputer.impute_make_vcf()
-imputer.impute(key='***REMOVED***')
+imputer.impute(key='eyJjdHkiOiJ0ZXh0XC9wbGFpbiIsImFsZyI6IkhTMjU2In0.eyJtYWlsIjoidml0YWxlZDJAbmloLmdvdiIsImV4cGlyZSI6MTU4NzkyMDg0NjYwNiwibmFtZSI6IkRhbiBWaXRhbGUiLCJhcGkiOnRydWUsInVzZXJuYW1lIjoidml0YWxlZDIifQ.mKLmReUpS5GWaJtf_AYfhvE6-V8ssjbI_AhcIvQkFGk')
