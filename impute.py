@@ -181,5 +181,3 @@ imputer = Impute(geno)
 # imputer.impute_prep_data()
 # imputer.impute_make_vcf()
 imputer.impute(key=<put key here!!!!>)
-
-java -jar bfg-1.13.0.jar --replace-text passwords.txt
