@@ -172,24 +172,14 @@ class Impute(Driver):
         
         imp_state = 0
         while imp_state < 3:
-            time.sleep(5)
-            print('***************************')
-            time.sleep(5)
-            print('***************************')
-            time.sleep(5)
-            print('***************************')
-            time.sleep(5)
-            print('***************************')
-            time.sleep(5)
-            print('***************************')
-            time.sleep(5)
-            os.system('cls')
-            imp_state = check_impute_status(key, impute_id)
-        
-    
-    
+            time.sleep(60)
+            os.system('clear')
+            imp_state = self.check_impute_status(key, impute_id)
+            
 
 imputer = Impute(geno)
 # imputer.impute_prep_data()
 # imputer.impute_make_vcf()
-imputer.impute(key='***REMOVED***')
+imputer.impute(key=<put key here!!!!>)
+
+java -jar bfg-1.13.0.jar --replace-text passwords.txt
