@@ -212,4 +212,4 @@ class Impute(Driver):
 imputer = Impute(geno)
 # imputer.impute_prep_data()
 # imputer.impute_make_vcf()
-imputer.impute(key='eyJjdHkiOiJ0ZXh0XC9wbGFpbiIsImFsZyI6IkhTMjU2In0.eyJtYWlsIjoidml0YWxlZDJAbmloLmdvdiIsImV4cGlyZSI6MTU4ODUyNDA0MzE3OSwibmFtZSI6IkRhbiBWaXRhbGUiLCJhcGkiOnRydWUsInVzZXJuYW1lIjoidml0YWxlZDIifQ.A0uO3XNG7gpJeNfEuq2qjiIHMqNgrigxmwYHAS4C4iQ')
+imputer.impute(key=<put key here!!!!>)
