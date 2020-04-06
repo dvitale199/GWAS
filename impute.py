@@ -4,6 +4,7 @@ import os
 import requests
 import json
 import time
+import glob
 
 #local imports
 from plink_helper.plink_driver import Driver
@@ -113,28 +114,55 @@ class Impute(Driver):
             else:
                 pass
         
-        
-        
-#         for stat in status['data']:
-#             if stat['id'] == _id:
-#                 if stat['complete']:
-#                     print(stat['id'],'is complete')
-#                     #insert script to pull results!!!!
-#                 else:
-#                     print(stat['id'],"still running!")
-        
-#                 return stat['complete']
 
-#             else:
-#                 pass
-                
-                
-        # print all jobs
-#         for job in r.json():
-#             print('{} [{}]'.format(job['id'], job['state']))
+    def pull_imputed_data(self, _key, _id, pw):
+        out_path = self.out_path
+        
+        #create path for impute ouput files
+        imputed_pathname = out_path + 'imputed'
+        os.mkdir(imputed_pathname)
+        os.chdir(imputed_pathname)
+        
+        # imputation server url
+        url = 'https://imputationserver.sph.umich.edu/api/v2'
 
-    def pull_imputed_data(self):
-        pass
+        # add token to header (see authentication)
+        headers = {'X-Auth-Token' : _key }
+        
+        r = requests.get(url + "/jobs/" + _id, headers=headers)
+        if r.status_code != 200:
+            raise Exception('GET /jobs/ {}'.format(r.status_code))
+
+        output_json = r.json()
+
+        hashes_dict = {output_json['outputParams'][i]['id'] : output_json['outputParams'][i]['hash'] for i in range(len(output_json['outputParams']))}
+        
+        # run a curl for each
+        curls = ['curl -sL https://imputationserver.sph.umich.edu/get/' + str(key) + '/' + str(hashes_dict[key]) + ' | bash' for key in hashes_dict]
+        
+        #change commands to parallel with ' & ' at end of each command
+#         parallel_curls = ' & '.join(curls)
+        for curl in curls:
+            print("Curling output data with the following command: " + curl)
+            subprocess.run(curl, shell=True)
+        print() 
+        print("Finished Pulling Imputed Data!")
+        print()
+        
+        #now unzip all ".zip" files (one for each chromosome)
+        zip_list = glob.glob(out_path + 'imputed/*.zip')
+        unzip_cmds = ['unzip -P ' + pw + ' ' + file for file in zip_list]
+        
+        for cmd in unzip_cmds:
+            print("Unzipping: " + cmd)
+            subprocess.run(cmd, shell=True)
+            print("Finished Unzipping")
+            
+#         if len(unzip_cmds) > 1:
+#             parallel_unzip = ' & '.join(unzip_cmds)
+#             subprocess.run(parallel_unzips, shell=True)
+#         else:
+#             subprocess.run(unzip_cmds[0])
    
 
     def impute(self, key, input_population='eur', pw='imputer', vcf_list=None):
@@ -176,8 +204,12 @@ class Impute(Driver):
             os.system('clear')
             imp_state = self.check_impute_status(key, impute_id)
             
+            if imp_state == 4:
+                print("Pulling Completed Data from Imputation Server!")
+                self.pull_imputed_data(key, impute_id, pw)
+            
 
 imputer = Impute(geno)
 # imputer.impute_prep_data()
 # imputer.impute_make_vcf()
-imputer.impute(key=<put key here!!!!>)
+imputer.impute(key='eyJjdHkiOiJ0ZXh0XC9wbGFpbiIsImFsZyI6IkhTMjU2In0.eyJtYWlsIjoidml0YWxlZDJAbmloLmdvdiIsImV4cGlyZSI6MTU4ODUyNDA0MzE3OSwibmFtZSI6IkRhbiBWaXRhbGUiLCJhcGkiOnRydWUsInVzZXJuYW1lIjoidml0YWxlZDIifQ.A0uO3XNG7gpJeNfEuq2qjiIHMqNgrigxmwYHAS4C4iQ')
