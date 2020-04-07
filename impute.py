@@ -156,7 +156,7 @@ class Impute(Driver):
         for cmd in unzip_cmds:
             print("Unzipping: " + cmd)
             subprocess.run(cmd, shell=True)
-            print("Finished Unzipping")
+        print("Finished Unzipping")
             
 #         if len(unzip_cmds) > 1:
 #             parallel_unzip = ' & '.join(unzip_cmds)
