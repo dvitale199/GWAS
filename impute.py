@@ -64,23 +64,15 @@ class Impute(Driver):
         step1 = "RECODE PLINK FILES TO VCF"
         
         cmds1 = ["plink --bfile " + geno_path + "-updated-chr" + str(i) + " --recode vcf --chr " + str(i) + " --out " + geno_path + "_chr" + str(i) for i in range(1,24)]   
-#         for i in range(1,24):
 
-#             bash1 = "plink --bfile " + geno_path + "-updated-chr" + str(i) + " --recode vcf --chr " + str(i) + " --out " + geno_path + "_chr" + str(i)
-#             print(bash1)
-#             subprocess.run(bash1, shell=True)
         self.run_cmds(cmds1, step1)
+        
         ## then sort and zip
         step2 =  "vcf-sort AND bgzip VCFS"
         cmds2 = ["vcf-sort " + geno_path + "_chr" + str(i) + ".vcf | bgzip -c > " + geno_path + "_pre_impute" + "_chr" + str(i) + ".vcf.gz" for i in range(1,24)]
-#         for i in range(1,24):
 
-#             bash2 = "vcf-sort " + geno_path + "_chr" + str(i) + ".vcf | bgzip -c > " + geno_path + "_chr" + str(i) + "_pre_impute.vcf.gz"
-#             print(bash2)
-#             subprocess.run(bash2, shell=True)
         self.run_cmds(cmds2, step2)
 
-        # and then you are ready to submit to the imputation server
         
     def check_impute_status(self, _key, _id):
         

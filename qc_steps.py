@@ -45,15 +45,16 @@ class QC(Driver):
         step = "PRUNING FOR HETEROZYGOSITY"
         print(step)
         
-        bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
-        bash2 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
-        bash3 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
-        bash4 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
-        bash5 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
-        bash6 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
-        bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
+        bash1 = 'cut -f 1,2,6 ' + geno_path + '.fam > ' + geno_path + '.phenos'
+        bash2 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
+        bash3 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
+        bash4 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
+        bash5 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
+        bash6 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
+        bash7 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
+        bash8 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
 
-        cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
+        cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8]
         
         self.run_cmds(cmds, step)
         
@@ -203,7 +204,7 @@ class QC(Driver):
         print("***********************************************")
         print()
             
-        save_files = [self.geno_path + ext for ext in ['.bim','.bed','.fam','.log','.hh', '.PLINK_STEPS.log']] + [self.geno_final + ext for ext in ['.bim','.bed','.fam','.hh']]
+        save_files = [self.geno_path + ext for ext in ['.bim','.bed','.fam','.log','.hh', '.phenos', '.PLINK_STEPS.log']] + [self.geno_final + ext for ext in ['.bim','.bed','.fam','.hh']]
         all_files = glob.glob(self.out_path + '*')
         rm_files = [x for x in all_files if x not in save_files]
         for file in rm_files:
