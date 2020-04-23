@@ -52,8 +52,6 @@ class Impute(Driver):
 
         cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
 
-#         for cmd in cmds:
-#             subprocess.run(cmd, shell=True)
         self.run_cmds(cmds, step)
             
 
@@ -132,8 +130,6 @@ class Impute(Driver):
         # run a curl for each
         curls = ['curl -sL https://imputationserver.sph.umich.edu/get/' + str(key) + '/' + str(hashes_dict[key]) + ' | bash' for key in hashes_dict]
         
-        #change commands to parallel with ' & ' at end of each command
-#         parallel_curls = ' & '.join(curls)
         for curl in curls:
             print("Curling output data with the following command: " + curl)
             subprocess.run(curl, shell=True)
@@ -149,12 +145,6 @@ class Impute(Driver):
             print("Unzipping: " + cmd)
             subprocess.run(cmd, shell=True)
         print("Finished Unzipping")
-            
-#         if len(unzip_cmds) > 1:
-#             parallel_unzip = ' & '.join(unzip_cmds)
-#             subprocess.run(parallel_unzips, shell=True)
-#         else:
-#             subprocess.run(unzip_cmds[0])
    
 
     def impute(self, key, input_population='eur', pw='imputer', vcf_list=None):
