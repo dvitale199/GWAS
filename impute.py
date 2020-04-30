@@ -107,6 +107,7 @@ class Impute(Driver):
 
     def pull_imputed_data(self, _key, _id, pw):
         out_path = self.out_path
+        geno_path = self.geno_path
         
         #create path for impute ouput files
         imputed_pathname = out_path + 'imputed'
@@ -189,6 +190,24 @@ class Impute(Driver):
             if imp_state == 4:
                 print("Pulling Completed Data from Imputation Server!")
                 self.pull_imputed_data(key, impute_id, pw)
+                
+                
+    def cleanup(self):
+        geno_path = self.geno_path
+        out_path = self.out_path
+        print("CLEANING UP THE DIRECTORY OF INTERMEDIATE FILES")
+        print("***********************************************")
+        print()
+        
+        # make list of hrc files but keep LOG
+        split_geno_files = glob.glob(geno_path + '*chr*')
+        hrc_files = list(set(glob.glob(out_path + '*HRC*')) - set(glob.glob(out_path + 'LOG*HRC*')))
+        updated_files = glob.glob(out_path + '*-updated.*')
+
+        rm_files = split_geno_files + hrc_files + updated_files + [out_path + 'LICENSE.txt', out_path + 'Run-plink.sh']
+        
+        for file in rm_files:
+            os.remove(file)
             
 
 imputer = Impute(geno)
