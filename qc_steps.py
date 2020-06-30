@@ -9,20 +9,20 @@ import sys
 #local imports
 from plink_helper.plink_driver import Driver
 
-# parser = argparse.ArgumentParser(description='Arguments for Genotyping QC (data in Plink .bim/.bam/.fam format)')
-# parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
+parser = argparse.ArgumentParser(description='Arguments for Genotyping QC (data in Plink .bim/.bam/.fam format)')
+parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
 # parser.add_argument('--out', type=str, default='out', help='Prefix for output (including path)')
-# parser.add_argument('--rare', default=False, action="store_true", help='Pruning toggle for rare variants. If --rare is used, final MAF pruning (0.01) will not be conducted, otherwise, rare variants will be pruned')
+parser.add_argument('--rare', default=False, action="store_true", help='Pruning toggle for rare variants. If --rare is used, final MAF pruning (0.01) will not be conducted, otherwise, rare variants will be pruned')
 
-# args = parser.parse_args()
+args = parser.parse_args()
 
-# geno_name = args.geno
-#rare_flag = args.rare
+geno_name = args.geno
+rare_flag = args.rare
 
 # paths for testing (will be args)
-geno_name = '/data/vitaled2/test_data/PDBP/PDBP'
-out_name = '/data/vitaled2/test_data/PDBP/'
-rare_flag = False
+# geno_name = '/test_data/test_data'
+# out_name = '/test_data/test_data/'
+# rare_flag = False
 
 
 #QC and data cleaning
@@ -30,50 +30,53 @@ class QC(Driver):
     def __init__(self, geno_path, rare=rare_flag):
         super().__init__(geno_path)
         # create new names for each step
-        self.geno_het = geno_path + "_het"
-        self.geno_call_rate = self.geno_het + "_call_rate"
-        self.geno_sex = self.geno_call_rate + "_sex"
+        self.geno_call_rate = geno_path + "_call_rate"
+        self.geno_het =  self.geno_call_rate + "_het"
+        self.geno_sex = self.geno_het + "_sex"
         self.geno_relatedness = self.geno_sex + "_relatedness"
         self.geno_variant = self.geno_relatedness + "_variant"
         self.geno_final = self.geno_variant + "_final"
-        self.tmp_file_list = [self.geno_het, self.geno_call_rate, self.geno_sex, self.geno_relatedness, self.geno_variant, ]
-        
+        self.tmp_file_list = [self.geno_call_rate, self.geno_het, self.geno_sex, self.geno_relatedness, self.geno_variant]
+
+
+    def call_rate_pruning(self):
+            geno_path = self.geno_path
+            out_path = self.out_path
+
+            step = "PRUNING FOR CALL RATE"
+            print(step)
+            bash1 = "awk '{print $1,$2,$6}' " + geno_path + '.fam > ' + geno_path + '.phenos'
+            bash2 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
+            bash3 = "mv " + geno_path + "_call_rate.irem " + out_path + "CALL_RATE_OUTLIERS.txt"
+
+            cmds = [bash1, bash2, bash3]
+
+            self.run_cmds(cmds, step)
+            
+            
     def het_pruning(self):
-        geno_path = self.geno_path
+        geno_path = self.geno_call_rate
         out_path = self.out_path
         
         step = "PRUNING FOR HETEROZYGOSITY"
         print(step)
         
-        bash1 = 'cut -f 1,2,6 ' + geno_path + '.fam > ' + geno_path + '.phenos'
-        bash2 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
-        bash3 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
-        bash4 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
-        bash5 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
-        bash6 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
-        bash7 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
-        bash8 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
+        
+        bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
+        bash2 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
+        bash3 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
+        bash4 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
+        bash5 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
+        bash6 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
+        bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
 
-        cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8]
+        cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7]
         
         self.run_cmds(cmds, step)
-        
-    def call_rate_pruning(self):
-        geno_path = self.geno_het
-        out_path = self.out_path
-        
-        step = "PRUNING FOR CALL RATE"
-        print(step)
 
-        bash1 = "plink --bfile " + geno_path + " --mind 0.05 --make-bed --out " + geno_path + "_call_rate"
-        bash2 = "mv " + geno_path + "_after_call_rate.irem " + out_path + "CALL_RATE_OUTLIERS.txt"
-
-        cmds = [bash1, bash2]
-
-        self.run_cmds(cmds, step)
         
     def sex_check(self):
-        geno_path = self.geno_call_rate
+        geno_path = self.geno_het
         out_path = self.out_path
         
         step = "CHECKING SEXES"
@@ -142,8 +145,9 @@ class QC(Driver):
 
         self.run_cmds(cmds, step)
 
-        exts = [".bed",".bim",".fam",".log",".hh"]
+        exts = [".bed",".bim",".fam",".log"]
         for ext in exts:
+            
             shutil.move(geno_path + "_HWE" + ext, geno_path + "_variant" + ext)
 
 
@@ -190,7 +194,7 @@ class QC(Driver):
             log.write("\n")
             log.write("\n")
 
-            exts = [".bed",".bim",".fam",".log",".hh"]
+            exts = [".bed",".bim",".fam",".log"]
             for ext in exts:
                 shutil.move(geno_path + "_MAF" + ext, geno_path + "_final" + ext)
 
@@ -204,7 +208,7 @@ class QC(Driver):
         print("***********************************************")
         print()
             
-        save_files = [self.geno_path + ext for ext in ['.bim','.bed','.fam','.log','.hh', '.phenos', '.PLINK_STEPS.log']] + [self.geno_final + ext for ext in ['.bim','.bed','.fam','.hh']]
+        save_files = [self.geno_path + ext for ext in ['.bim','.bed','.fam','.log','.hh', '.phenos', '.PLINK_STEPS.log']] + [self.geno_final + ext for ext in ['.bim','.bed','.fam','.hh']] + [self.out_path + 'imputed']
         all_files = glob.glob(self.out_path + '*')
         rm_files = [x for x in all_files if x not in save_files]
         for file in rm_files:
@@ -218,8 +222,8 @@ qc = QC(geno_name)
 qc.rm_log()
 
 # run het pruning
-qc.het_pruning()
 qc.call_rate_pruning()
+qc.het_pruning()
 qc.sex_check()
 qc.relatedness_pruning()
 qc.variant_pruning()
