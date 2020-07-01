@@ -10,16 +10,21 @@ import glob
 from plink_helper.plink_driver import Driver
 
 
-# parser = argparse.ArgumentParser(description='Arguments for Genotyping Imputation (data in Plink .bim/.bam/.fam format)')
-# parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
+parser = argparse.ArgumentParser(description='Arguments for Genotyping Imputation (data in Plink .bim/.bam/.fam format)')
+parser.add_argument('--geno', type=str, default='nope', help='Genotype: (string file path). Path to PLINK format genotype file, everything before the *.bed/bim/fam [default: nope].')
+parser.add_argument('--key', type=str, default='nope', help='Please input imputation server key!')
+#for now, getting the "out" location from --geno
 # parser.add_argument('--out', type=str, default='out', help='Prefix for output (including path)')
 
-# args = parser.parse_args()
+args = parser.parse_args()
 
-# geno = args.geno
+geno = args.geno
+key = args.key
 # out = args.out
-geno = '/data/vitaled2/test_data/PDBP/PDBP_het_call_rate_sex_relatedness_variant_final'
-out = '/data/vitaled2/test_data/PDBP/'
+
+# for testing
+# geno = 'test_data/test_data_call_rate_het_sex_relatedness_variant_final'
+# out = '/test_data'
 
 
 
@@ -211,6 +216,6 @@ class Impute(Driver):
             
 
 imputer = Impute(geno)
-# imputer.impute_prep_data()
-# imputer.impute_make_vcf()
-imputer.impute(key=<put key here!!!!>)
+imputer.impute_prep_data()
+imputer.impute_make_vcf()
+imputer.impute(key=key)
