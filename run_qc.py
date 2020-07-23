@@ -13,6 +13,14 @@ args = parser.parse_args()
 geno_name = args.geno
 rare_flag = args.rare
 
+# now make filenames:
+geno_call_rate = geno_name + "_call_rate"
+geno_het =  geno_call_rate + "_het"
+geno_sex = geno_het + "_sex"
+geno_relatedness = geno_sex + "_relatedness"
+geno_variant = geno_relatedness + "_variant"
+geno_final = geno_variant + "_final"
+
 # INSTANTIATE QC WITH INPUT NAME AND OUTPUT NAME     
 qc = QC(geno_name, rare=rare_flag)
 
@@ -21,12 +29,14 @@ qc = QC(geno_name, rare=rare_flag)
 qc.rm_log()
 
 # run het pruning
-qc.call_rate_pruning()
-qc.het_pruning()
-qc.sex_check()
-qc.relatedness_pruning()
-qc.variant_pruning()
-qc.rare_prune()
-qc.cleanup()
+# qc.call_rate_pruning(geno_name)
+# qc.het_pruning(geno_call_rate)
+# qc.sex_check(geno_het)
+# qc.relatedness_pruning(geno_sex)
+qc.variant_pruning(geno_relatedness)
+qc.rare_prune(geno_variant)
+
+# need to fix cleanup
+# qc.cleanup()
 
 print("DONE!!!!!!!")
