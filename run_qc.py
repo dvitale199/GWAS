@@ -29,12 +29,12 @@ qc = QC(geno_name, rare=rare_flag)
 qc.rm_log()
 
 # run het pruning
-# qc.call_rate_pruning(geno_name)
-# qc.het_pruning(geno_call_rate)
-# qc.sex_check(geno_het)
+qc.call_rate_pruning(geno_name)
+qc.het_pruning(geno_call_rate)
+qc.sex_check(geno_het)
 # qc.relatedness_pruning(geno_sex)
-qc.variant_pruning(geno_relatedness)
-qc.rare_prune(geno_variant)
+# qc.variant_pruning(geno_relatedness)
+# qc.rare_prune(geno_variant)
 
 # need to fix cleanup
 # qc.cleanup()
