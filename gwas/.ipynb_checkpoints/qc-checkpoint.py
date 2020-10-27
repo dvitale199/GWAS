@@ -24,7 +24,7 @@ class QC(Driver):
         self.rare = rare
 
     def call_rate_pruning(self, geno_path):
-#             geno_path = self.geno_path
+
             out_path = self.out_path
 
             step = "PRUNING FOR CALL RATE"
@@ -39,7 +39,7 @@ class QC(Driver):
             
             
     def het_pruning(self, geno_path):
-#         geno_path = self.geno_call_rate
+
         out_path = self.out_path
         
         step = "PRUNING FOR HETEROZYGOSITY"
@@ -60,7 +60,7 @@ class QC(Driver):
 
         
     def sex_check(self, geno_path):
-#         geno_path = self.geno_het
+
         out_path = self.out_path
         
         step = "CHECKING SEXES"
@@ -79,10 +79,50 @@ class QC(Driver):
         self.run_cmds(cmds, step)
 
 
-    # MAY NEED TO ADD FUNCTION FOR ANCESTRY OUTLIERS (PCR FOR RELATEDNESS)     
+    def ancestry_comparison(self, geno_path, ref_path):
+        
+        out_path = self.out_path
+        step = "PCA for Ancestry Comparison"
+        print(step)
+        
+        # set up files to add numbers for plotting (as done in Cornelis's script)
+        
+        bash1 = f"plink --bfile {geno_path} --bmerge {ref_path} --out {out_path}bin_snplis --make-bed"
+        bash2 = f"plink --bfile {geno_path} --flip {out_path}bin_snplis-merge.missnp --make-bed --out {geno_path}_flip"
+        bash3 = f"plink --bfile {geno_path}_flip --bmerge {ref_path} --out {out_path}bin_snplis --make-bed"
+        bash4 = f"plink --bfile {geno_path}_flip --exclude {out_path}bin_snplis-merge.missnp --out {geno_path}_flip_pruned --make-bed"
+        bash5 = f"plink --bfile {geno_path}_flip_pruned --bmerge {ref_path} --out {out_path}bin_snplis --make-bed"
+        bash6 = f"plink --bfile {out_path}bin_snplis --geno 0.01 --out {out_path}pca --make-bed --pca 4"
+        
+        # then add some names here and there
+        bash7 = f'grep "EUROPE" {out_path}pca.eigenvec > {out_path}eur.txt'
+        bash8 = f'grep "ASIA" {out_path}pca.eigenvec > {out_path}asia.txt'
+        bash9 = f'grep "AFRICA" {out_path}pca.eigenvec > {out_path}afri.txt'
+        bash10 = f'grep -v -f {out_path}eur.txt {out_path}pca.eigenvec | grep -v -f {out_path}asia.txt | grep -v -f {out_path}afri.txt > {out_path}new_samples.txt'
+        bash11 = f'cut -d " " -f 3 {geno_path}.fam > {out_path}new_samples_add.txt'
+        bash12 = f'paste {out_path}new_samples_add.txt {out_path}new_samples.txt > {out_path}new_samples2.txt'
+        bash13 = f"awk -v label='1' -v OFS='  ' '{{print label, $0}}' {out_path}eur.txt > {out_path}euro.txt"
+        bash14 = f"awk -v label='2' -v OFS='  ' '{{print label, $0}}' {out_path}asia.txt > {out_path}asiao.txt"
+        bash15 = f"awk -v label='3' -v OFS='  ' '{{print label, $0}}' {out_path}afri.txt > {out_path}afrio.txt"
+        bash16 = f'cat {out_path}new_samples2.txt {out_path}euro.txt {out_path}asiao.txt {out_path}afrio.txt > {out_path}pca.eigenvec2'
+        
+        # R script for PCA plotting and filtering
+        bash17 = f"cp gwas/PCA_in_R.R {out_path}"
+        
+        # eventually convert this to python and add to qc as function
+        bash18 = f"Rscript {out_path}PCA_in_R.R {out_path} --no-save"
+        
+        # then back to plink to remove outliers
+        bash19 = f"plink --bfile {geno_path} --keep {out_path}PCA_filtered_europeans.txt --make-bed --out {geno_path}_heterozyg_hapmap"
+        bash20 = f"cat {out_path}PCA_filtered_asians.txt {out_path}PCA_filtered_africans.txt {out_path}PCA_filtered_mixed_race.txt > {out_path}hapmap_outliers.txt"
+        
+        cmds = [bash1, bash2, bash3, bash4, bash5, bash6, bash7, bash8, bash9, bash10, bash11, bash12, bash13, bash14, bash15, bash16, bash17, bash18, bash19, bash20]
+        
+        self.run_cmds(cmds, step)  
 
+        
     def relatedness_pruning(self, geno_path):
-#         geno_path = self.geno_sex
+
         out_path = self.out_path
         
         step = "RELATEDNESS PRUNING"
@@ -99,7 +139,7 @@ class QC(Driver):
 
     ##variant checks
     def variant_pruning(self, geno_path):
-#         geno_path = self.geno_relatedness
+
         out_path = self.out_path
         
         step = "VARIANT-LEVEL PRUNING"
@@ -137,7 +177,6 @@ class QC(Driver):
 
     def rare_prune(self, geno_path):
 
-#         geno_path = self.geno_variant
         out_path = self.out_path
         rare = self.rare
         # OPTIONAL STEP: if --rare flag included when running, rare variants will be left alone, otherwise they will be pruned with --maf 0.01
