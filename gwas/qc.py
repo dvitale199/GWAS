@@ -49,8 +49,8 @@ class QC(Driver):
         bash1 = "plink --bfile " + geno_path + " --geno 0.01 --maf 0.05 --indep-pairwise 50 5 0.5 --out " + out_path + "pruning"
         bash2 = "plink --bfile " + geno_path + " --extract " + out_path + "pruning.prune.in --make-bed --out " + out_path + "pruned_data"
         bash3 = "plink --bfile " + out_path + "pruned_data --het --out " + out_path + "prunedHet"
-        bash4 = "awk '{if ($6 <= -0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
-        bash5 = "awk '{if ($6 >= 0.15) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
+        bash4 = "awk '{if ($6 <= -0.25) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers1.txt" 
+        bash5 = "awk '{if ($6 >= 0.25) print $0 }' " + out_path + "prunedHet.het > " + out_path + "outliers2.txt" 
         bash6 = "cat " + out_path + "outliers2.txt " + out_path + "outliers1.txt > " + out_path + "HETEROZYGOSITY_OUTLIERS.txt"
         bash7 = "plink --bfile " + geno_path + " --remove " + out_path + "HETEROZYGOSITY_OUTLIERS.txt --make-bed --out " + geno_path + "_het"
 
