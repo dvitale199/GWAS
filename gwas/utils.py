@@ -5,6 +5,7 @@ from matplotlib import cm
 import numpy as np
 import os
 import shutil
+import pandas as pd
 
 def shell_do(command, log=False, return_log=False):
     print(f'Executing: {(" ").join(command.split())}', file=sys.stderr)
@@ -75,35 +76,25 @@ def random_sample_snps(geno_path, out_name, n=10000):
     
     shell_do(rand_sample_cmd)
     
-def flash_pca(geno_path, out_name, dim=8):
-    flashpca_cmd = f'\
-    flashpca --bfile {geno_path}\
-     -d {dim}\
-     --outpc {out_name}.pcs\
-     --outvec {out_name}.vec\
-     --outval {out_name}.val\
-     --outpve {out_name}.pve\
-     --outload {out_name}.loadings\
-     --outmeansd {out_name}.meansd'
+
+def get_common_snps(geno_path1, geno_path2, out_name):  
     
-    shell_do(flashpca_cmd)
+    """
+    Gets common snps between 2 genotype files and extracts from geno_path1. outputs plink bed/bim/fam file 
+    for geno_path1 with only matching snps from geno_path2
+    """
     
-def plot_pcs(labeled_pcs_df, dim1='PC1', dim2='PC2'):
-    # now plot PCs
-    fig = plt.figure(figsize = (8,8))
-    ax = fig.add_subplot(1,1,1) 
-    ax.set_xlabel('Principal Component 1', fontsize = 15)
-    ax.set_ylabel('Principal Component 2', fontsize = 15)
-    ax.set_title('2 component PCA', fontsize = 20)
-    cmap = cm.get_cmap('tab10')
-    targets = list(labeled_pcs_df.label.unique())
-    # targets = ['new', 'EUR']
-    colors = cmap(np.linspace(0, 1, len(targets)))
-    for target, color in zip(targets,colors):
-        indicesToKeep = labeled_pcs_df['label'] == target
-        ax.scatter(labeled_pcs_df.loc[indicesToKeep, dim1]
-                   , labeled_pcs_df.loc[indicesToKeep, dim2]
-                   , c = color
-                   , s = 50)
-    ax.legend(targets)
-    ax.grid()
+    bim1 = pd.read_csv(f'{geno_path1}.bim', sep='\t', header=None)
+    bim1.columns = ['chr', 'rsid', 'kb', 'pos', 'a1', 'a2']
+    bim2 = pd.read_csv(f'{geno_path2}.bim', sep='\t', header=None)
+    bim2.columns = ['chr', 'rsid', 'kb', 'pos', 'a1', 'a2']
+
+    common_snps = bim2.merge(bim1, how='inner', on=['rsid'])
+
+    common_snps_file = f'{out_name}.common_snps'
+    common_snps['rsid'].to_csv(f'{common_snps_file}', sep='\t', header=False, index=False)
+    
+    ext_snps_cmd = f'plink --bfile {geno_path1} --extract {common_snps_file} --make-bed --out {out_name}'
+    
+    shell_do(ext_snps_cmd)
+    

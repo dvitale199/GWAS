@@ -17,7 +17,7 @@ key = args.key
 imputer = Impute(geno)
 imputer.impute_prep_data()
 imputer.impute_make_vcf()
-imputer.impute(key=key)
+# imputer.impute(key=key)
 
 #not quite ready to use!!!! will delete necessary files
 # imputer.cleanup()
