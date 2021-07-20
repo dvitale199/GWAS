@@ -1,3 +1,8 @@
+#This repo is no longer being developed and has been replaced by: https://github.com/dvitale199/GenoTools
+
+
+
+
 # GWAS Pipeline- Quality Control, Imputation, GWAS, and more!
 This repo provides easy execution for automated GWAS Pipelines which are used by the Laboratory of Neurogenetics of the National Institute on Aging, National Institutes of Health. The basic pipeline was written by Cornelis Blauwendraat (Laboratory of Neurogenetics) and was automated by Dan Vitale (Data Tecnica International/LNG) This is a work in progress but will currently run automated Quality Control and and Imputation (Michigan Imputation Server) given genotypes in Plink (.bed/.bim/.fam) format.
 
